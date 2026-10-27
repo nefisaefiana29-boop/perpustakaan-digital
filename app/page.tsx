@@ -1,1045 +1,1456 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-type Chapter = {
-  title: string;
-  content: string;
-};
-
-type Novel = {
+type Book = {
   id: number;
   title: string;
   author: string;
-  genre: string;
-  emoji: string;
-  cover: string;
-  synopsis: string;
-  chapters: Chapter[];
+  category: string;
+  publisher: string;
+  year: number;
+  stock: number;
 };
 
-const novels: Novel[] = [
+type Member = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+};
+
+type Loan = {
+  id: number;
+  member: string;
+  book: string;
+  date: string;
+  dueDate: string;
+  status: "Dipinjam" | "Dikembalikan";
+};
+
+type Section =
+  | "Dashboard"
+  | "Katalog Buku"
+  | "Data Anggota"
+  | "Peminjaman"
+  | "Pengembalian"
+  | "Riwayat"
+  | "Profil Saya";
+
+const initialBooks: Book[] = [
   {
     id: 1,
-    title: "Senja Terakhir untuk Kita",
-    author: "PustakaKita",
-    genre: "Romantis",
-    emoji: "🌅",
-    cover: "from-rose-200 to-orange-100",
-    synopsis:
-      "Dua hati bertemu kembali setelah perpisahan yang menyisakan banyak pertanyaan.",
-    chapters: [
-      {
-        title: "Bab 1 — Pertemuan di Kedai Kopi",
-        content: `Hujan turun perlahan sore itu. Nara duduk sendirian di dekat jendela sebuah kedai kopi kecil, memandangi jalanan yang basah sambil memeluk secangkir cokelat hangat.
-
-Sudah hampir dua tahun ia tidak datang ke tempat itu. Banyak hal berubah sejak terakhir kali ia duduk di kursi yang sama. Namun, aroma kopi dan suara hujan masih terasa seperti dulu.
-
-"Nara?"
-
-Ia mengenali suara itu bahkan sebelum mengangkat kepala.
-
-Di hadapannya berdiri Arka, seseorang yang pernah menjadi bagian paling indah sekaligus paling menyakitkan dalam hidupnya.
-
-"Kamu masih suka duduk dekat jendela," kata Arka.
-
-Nara mencoba tersenyum. "Dan kamu masih suka datang tanpa memberi kabar."
-
-Dua tahun lalu, mereka berpisah tanpa penjelasan yang benar-benar selesai. Nara pernah menunggu pesan yang tidak datang dan membaca ulang percakapan lama.
-
-Sekarang orang itu kembali, seolah waktu tidak pernah berjalan.
-
-"Aku boleh duduk?" tanya Arka.
-
-Nara mengangguk. Ia belum tahu apakah pertemuan ini akan menjadi awal yang baru atau penutup dari cerita lama.`,
-      },
-      {
-        title: "Bab 2 — Pesan yang Tak Pernah Dikirim",
-        content: `Mereka berbicara tentang hal-hal sederhana. Tentang pekerjaan, cuaca, dan kedai yang kini memiliki menu baru. Tidak ada yang berani menyebut alasan mereka pernah saling kehilangan.
-
-Sampai Arka mengeluarkan sebuah amplop kecil dari tasnya.
-
-"Aku menulis ini dua tahun lalu," katanya. "Tapi aku tidak pernah punya keberanian untuk mengirimkannya."
-
-Di dalamnya ada beberapa lembar kertas. Arka menulis bahwa ia takut mengecewakan Nara dan merasa belum mampu menjadi seseorang yang bisa diandalkan.
-
-Nara membaca kalimat terakhirnya berulang kali.
-
-"Aku kira dengan menjauh, aku sedang melindungimu. Ternyata aku hanya meninggalkanmu dengan pertanyaan."
-
-Nara melipat surat itu perlahan.
-
-"Kamu tahu apa yang paling menyakitkan? Bukan karena kamu pergi. Tapi karena kamu memutuskan semuanya sendirian."
-
-Arka menunduk. "Aku tahu. Dan aku tidak bisa meminta kamu melupakan itu."
-
-Untuk pertama kalinya sore itu, mereka berhenti berpura-pura baik-baik saja.`,
-      },
-      {
-        title: "Bab 3 — Tidak Semua yang Kembali Harus Dimiliki",
-        content: `Beberapa hari kemudian, Arka mengajak Nara bertemu di taman kota.
-
-"Aku masih menyayangimu," katanya. "Tapi aku tidak ingin perasaanku menjadi alasan kamu harus menerimaku lagi."
-
-Nara memandang daun-daun yang bergerak tertiup angin.
-
-"Dulu aku berpikir kalau kamu kembali, semua rasa sakitku akan hilang. Sekarang aku tahu, penjelasan bisa membantu kita memahami masa lalu, tetapi tidak otomatis menghapus luka."
-
-Arka mengangguk tanpa membela diri.
-
-Nara sudah belajar menikmati pagi, menyelesaikan pekerjaannya, dan tertawa bersama teman-temannya tanpa merasa bersalah.
-
-Mungkin masih ada rasa sayang di sana. Namun, rasa sayang tidak selalu berarti harus kembali bersama.
-
-"Terima kasih sudah menjelaskan semuanya," kata Nara. "Aku harap kita sama-sama menemukan hidup yang lebih baik."
-
-Mereka berpisah tanpa saling menyalahkan.`,
-      },
-      {
-        title: "Bab 4 — Senja yang Baru",
-        content: `Satu bulan kemudian, Nara kembali ke kedai kopi itu.
-
-Ia membuka buku catatannya dan menulis bahwa ada orang yang datang untuk menetap, ada yang datang untuk mengajarkan sesuatu, dan ada pula yang pergi sebelum kita memahami alasannya.
-
-Dulu, Nara menganggap perpisahan sebagai bukti bahwa dirinya tidak cukup baik. Kini ia mengerti bahwa tidak semua hubungan berakhir karena seseorang kurang berharga.
-
-Teleponnya bergetar. Sahabatnya mengajaknya melihat matahari terbenam.
-
-Nara tersenyum dan segera membereskan barang-barangnya.
-
-Di luar, langit berubah menjadi jingga keemasan. Ia berjalan menyusuri trotoar dengan langkah ringan.
-
-Untuk pertama kalinya, ia tidak merasa sedang meninggalkan sesuatu.
-
-Ia sedang menuju sesuatu yang baru.
-
-Senja itu bukan lagi tentang kehilangan seseorang.
-
-Senja itu adalah tentang menemukan dirinya sendiri.`,
-      },
-    ],
+    title: "Laskar Pelangi",
+    author: "Andrea Hirata",
+    category: "Novel",
+    publisher: "Bentang Pustaka",
+    year: 2005,
+    stock: 8,
   },
   {
     id: 2,
-    title: "Rahasia di Rumah Tua",
-    author: "PustakaKita",
-    genre: "Horor",
-    emoji: "🏚️",
-    cover: "from-indigo-200 to-slate-200",
-    synopsis:
-      "Sebuah buku harian membawa Laras pada rahasia keluarga yang disembunyikan selama puluhan tahun.",
-    chapters: [
-      {
-        title: "Bab 1 — Rumah di Ujung Jalan",
-        content: `Laras tidak pernah menyukai rumah tua. Baginya, rumah tua selalu memiliki suara aneh, sudut gelap, dan jendela yang seolah mengawasi siapa pun yang lewat.
-
-Namun, setelah neneknya meninggal, rumah di ujung Jalan Melati menjadi satu-satunya tempat yang bisa ia tinggali sementara.
-
-Pada malam pertama, Laras terbangun karena mendengar tiga ketukan.
-
-Tok. Tok. Tok.
-
-Ia membuka pintu. Tidak ada siapa-siapa. Hanya halaman kosong dan angin dingin yang menggerakkan dedaunan.
-
-Saat kembali ke kamar, Laras menyadari pintu lemari tua terbuka sedikit.
-
-Di lantai, tepat di bawah lemari, terdapat sebuah kunci kecil berwarna perak.
-
-Ia belum tahu bahwa kunci itu akan membawanya pada rahasia yang telah disembunyikan keluarganya selama bertahun-tahun.`,
-      },
-      {
-        title: "Bab 2 — Buku Harian",
-        content: `Keesokan paginya, Laras mencoba membuka semua laci di rumah itu. Kunci perak tersebut tidak cocok dengan pintu mana pun sampai ia menemukan kotak kayu di ruang penyimpanan.
-
-Di dalamnya ada foto lama, pita biru, dan buku harian dengan sampul cokelat.
-
-Halaman pertamanya berisi tulisan tangan nenek.
-
-"Jika suatu hari Laras menemukan buku ini, berarti waktunya telah tiba untuk menceritakan semuanya."
-
-Buku itu menceritakan seorang perempuan bernama Ratih yang menghilang dari desa puluhan tahun lalu.
-
-Menurut cerita warga, Ratih pergi setelah pertengkaran keluarga. Namun, catatan nenek menyebutkan bahwa Ratih sebenarnya meninggalkan surat yang tidak pernah sampai kepada keluarganya.
-
-Di halaman terakhir, tertulis sebuah alamat dan kalimat pendek.
-
-"Temukan orang yang masih menyimpan pita biru."
-
-Laras memandang pita di dalam kotak. Siapa Ratih, dan mengapa nenek menyimpan rahasia ini?`,
-      },
-      {
-        title: "Bab 3 — Tetangga Sebelah",
-        content: `Alamat dalam buku harian membawa Laras ke sebuah rumah sederhana di seberang sungai. Di sana tinggal seorang pria tua bernama Pak Damar.
-
-Ketika Laras menyebut nama Ratih, wajah pria itu berubah.
-
-"Kamu cucu Bu Aminah?" tanyanya.
-
-Laras mengangguk.
-
-Pak Damar kembali membawa sebuah kotak kecil. Di dalamnya ada pita biru yang sama persis dengan milik Laras.
-
-Ia menjelaskan bahwa Ratih adalah adik nenek Laras. Mereka pernah bertengkar karena kesalahpahaman, lalu Ratih pergi sebelum sempat menjelaskan kebenaran.
-
-"Ayahmu dan nenekmu mencarinya bertahun-tahun," kata Pak Damar.
-
-Laras menerima sebuah surat yang masih tersegel.
-
-Di bagian depan tertulis nama neneknya. Tanggalnya menunjukkan surat itu ditulis beberapa hari sebelum Ratih menghilang.`,
-      },
-      {
-        title: "Bab 4 — Surat Terakhir",
-        content: `Surat itu berisi permintaan maaf. Ratih menulis bahwa ia tidak pernah berniat meninggalkan keluarganya. Ia hanya ingin mencari pekerjaan di kota lain agar bisa membantu membayar utang keluarga.
-
-Ia berjanji akan pulang setelah keadaan membaik.
-
-Laras membawa surat itu pulang dan meletakkannya di atas meja ruang tamu.
-
-Rumah tua yang semula terasa dingin kini terlihat berbeda. Foto-foto lama di dinding bukan lagi sekadar hiasan. Semuanya adalah bagian dari kehidupan seseorang yang pernah berharap untuk dimengerti.
-
-Malam itu, tidak ada ketukan misterius.
-
-Laras mengerti bahwa rahasia yang paling lama disimpan terkadang bukan sesuatu yang menakutkan, melainkan kesedihan yang tidak pernah sempat diceritakan.
-
-Ia berjanji akan menjaga kisah itu agar kesalahpahaman yang sama tidak diwariskan lagi kepada generasi berikutnya.`,
-      },
-    ],
+    title: "Bumi",
+    author: "Tere Liye",
+    category: "Fantasi",
+    publisher: "Gramedia",
+    year: 2014,
+    stock: 5,
   },
   {
     id: 3,
-    title: "Langit yang Menungguku",
-    author: "PustakaKita",
-    genre: "Motivasi",
-    emoji: "☁️",
-    cover: "from-sky-200 to-purple-100",
-    synopsis:
-      "Seorang mahasiswi pemalu belajar menghadapi rasa takut dan menemukan keberanian mengejar mimpinya.",
-    chapters: [
-      {
-        title: "Bab 1 — Gadis di Barisan Belakang",
-        content: `Mira selalu memilih kursi paling belakang di kelas. Ia merasa lebih nyaman mendengarkan daripada berbicara.
-
-Setiap kali dosen meminta mahasiswa menyampaikan pendapat, jantungnya berdetak lebih cepat. Ia sebenarnya tahu jawabannya, tetapi kata-kata terasa berhenti di tenggorokan.
-
-Suatu hari, dosen mengumumkan proyek kelompok yang mengharuskan setiap mahasiswa mempresentasikan hasil pekerjaan mereka.
-
-Mira langsung merasa cemas.
-
-Di rumah, ibunya duduk di sampingnya.
-
-"Kamu tidak harus langsung berani melakukan semuanya," kata ibunya. "Coba satu langkah kecil dulu."
-
-Mira mengangguk. Ia belum sepenuhnya percaya pada dirinya sendiri, tetapi malam itu ia mulai berlatih di depan cermin.`,
-      },
-      {
-        title: "Bab 2 — Satu Langkah Kecil",
-        content: `Mira mulai berlatih berbicara di depan cermin. Awalnya ia hanya mampu berbicara selama satu menit sebelum berhenti karena gugup.
-
-Ia mengulanginya lagi keesokan hari.
-
-Kemudian, ia meminta sahabatnya mendengarkan presentasinya. Sahabatnya tidak menertawakan kesalahan Mira. Ia justru membantu memperbaiki bagian yang kurang jelas.
-
-Hari presentasi tiba. Ketika namanya dipanggil, telapak tangan Mira terasa dingin.
-
-Ia menarik napas dan memulai kalimat pertama.
-
-Suaranya sedikit gemetar. Ia sempat salah menyebut satu kata, tetapi ia melanjutkan sampai akhir.
-
-Mira kembali ke tempat duduk dengan perasaan lega. Ia belum menjadi orang paling percaya diri di kelas, tetapi hari itu ia berhasil melakukan sesuatu yang sebelumnya terasa mustahil.`,
-      },
-      {
-        title: "Bab 3 — Tidak Perlu Berlari",
-        content: `Setelah presentasi, Mira menyadari bahwa perubahan tidak selalu terlihat besar.
-
-Ada hari ketika ia kembali merasa takut. Ada saat ketika ia membandingkan dirinya dengan teman-temannya.
-
-Sampai suatu sore, ia menemukan catatan lama di dalam bukunya.
-
-"Tidak apa-apa berjalan pelan, asalkan tidak berhenti. Setiap orang memiliki waktunya sendiri untuk tumbuh dan berhasil."
-
-Mira membaca kalimat itu berulang kali.
-
-Ia mulai membuat tujuan kecil setiap minggu: membaca beberapa halaman buku, bertanya satu kali di kelas, dan mencoba hal baru meskipun masih takut.
-
-Perlahan-lahan, ia menemukan bahwa keberanian bukan sesuatu yang datang sekaligus.
-
-Keberanian tumbuh setiap kali seseorang memilih untuk mencoba lagi.`,
-      },
-      {
-        title: "Bab 4 — Langit Milik Semua Orang",
-        content: `Beberapa bulan kemudian, Mira berdiri di depan kelas untuk mempresentasikan proyek akhirnya.
-
-Kali ini ia masih merasa gugup. Namun, ia tidak lagi menganggap rasa gugup sebagai tanda bahwa dirinya tidak mampu.
-
-Ia mulai berbicara. Ketika seorang teman mengajukan pertanyaan, Mira berpikir sebentar sebelum menjawab.
-
-Setelah kelas selesai, sahabatnya menghampiri.
-
-"Kamu kelihatan jauh lebih percaya diri sekarang."
-
-Mira tertawa kecil. "Aku masih takut, kok."
-
-"Terus, bagaimana kamu bisa melakukannya?"
-
-Mira memandang langit dari jendela kelas.
-
-"Mungkin karena aku sudah tidak menunggu rasa takut itu hilang dulu untuk mencoba."
-
-Ia mengerti bahwa langit yang luas tidak pernah meminta seseorang tumbuh secepat orang lain.
-
-Ia hanya perlu terus melangkah, dengan caranya sendiri.`,
-      },
-    ],
+    title: "Filosofi Teras",
+    author: "Henry Manampiring",
+    category: "Pengembangan Diri",
+    publisher: "Kompas",
+    year: 2018,
+    stock: 4,
   },
   {
     id: 4,
-    title: "Cinta di Bangku Sekolah",
-    author: "PustakaKita",
-    genre: "Romantis",
-    emoji: "💌",
-    cover: "from-pink-200 to-rose-100",
-    synopsis:
-      "Dua siswa yang berbeda sifat perlahan belajar mengenal arti cinta dan keberanian.",
-    chapters: [
-      {
-        title: "Bab 1 — Teman Sebangku",
-        content: `Hari pertama di kelas baru membuat Alina gugup. Ia memilih kursi dekat jendela, berharap tidak ada yang memperhatikannya.
-
-Namun, seorang siswa bernama Raka datang terlambat dan duduk tepat di sebelahnya.
-
-"Namamu siapa?" tanya Raka.
-
-"Alina."
-
-Sejak hari itu, mereka mulai berbagi catatan, mengerjakan tugas, dan bercanda saat istirahat.
-
-Alina tidak menyangka seseorang yang awalnya terasa asing perlahan menjadi orang yang paling ia tunggu kehadirannya.`,
-      },
-      {
-        title: "Bab 2 — Rahasia Kecil",
-        content: `Raka selalu punya alasan untuk meminjam pulpen Alina, meskipun ia sebenarnya membawa dua pulpen sendiri.
-
-Suatu sore, Raka memberikan selembar kertas kecil. Isinya sederhana: "Terima kasih sudah membuat hari-hariku lebih menyenangkan."
-
-Alina menyimpan kertas itu di dalam buku catatannya.
-
-Ia belum tahu apa yang akan terjadi selanjutnya, tetapi ia mulai menyadari bahwa perasaannya kepada Raka bukan lagi sekadar persahabatan.`,
-      },
-      {
-        title: "Bab 3 — Hujan di Hari Perpisahan",
-        content: `Hari pembagian rapor menjadi hari yang berbeda bagi Alina dan Raka. Keluarga Raka akan pindah ke kota lain.
-
-Mereka berdiri di depan gerbang sekolah, mendengarkan suara hujan yang jatuh di atap.
-
-"Aku tidak tahu kapan kita bisa bertemu lagi," kata Raka.
-
-Alina menunduk. Ia ingin mengatakan banyak hal, tetapi hanya satu kalimat yang berhasil keluar.
-
-"Jangan lupa sama aku."
-
-Raka tersenyum. "Aku akan mengingat teman sebangkuku yang selalu meminjamkan catatan."
-
-Mereka tertawa kecil, meskipun mata Alina mulai berkaca-kaca.
-
-Hari itu mereka belajar bahwa beberapa pertemuan terasa begitu berharga justru karena kita tidak tahu berapa lama akan memilikinya.`,
-      },
-    ],
+    title: "Laut Bercerita",
+    author: "Leila S. Chudori",
+    category: "Novel",
+    publisher: "Kepustakaan Populer Gramedia",
+    year: 2017,
+    stock: 3,
   },
   {
     id: 5,
-    title: "Sahabat Sampai Nanti",
-    author: "PustakaKita",
-    genre: "Persahabatan",
-    emoji: "🫶",
-    cover: "from-purple-200 to-pink-100",
-    synopsis:
-      "Tiga sahabat menghadapi perubahan hidup dan belajar menjaga persahabatan.",
-    chapters: [
-      {
-        title: "Bab 1 — Janji di Taman",
-        content: `Dinda, Rani, dan Putri selalu bertemu di taman kecil dekat sekolah.
-
-Mereka punya kebiasaan menuliskan impian di secarik kertas lalu menyimpannya di dalam sebuah kotak.
-
-"Sepuluh tahun lagi, kita harus buka kotak ini bersama," kata Putri.
-
-Mereka tertawa dan berjanji akan selalu saling mendukung.
-
-Saat itu, mereka percaya tidak ada yang bisa mengubah persahabatan mereka.`,
-      },
-      {
-        title: "Bab 2 — Jalan yang Berbeda",
-        content: `Waktu berjalan. Mereka mulai sibuk dengan ujian, keluarga, dan rencana masa depan.
-
-Pesan di grup yang dahulu ramai perlahan menjadi semakin jarang.
-
-Dinda sempat merasa dilupakan. Namun, ketika ia akhirnya bercerita tentang kesedihannya, kedua sahabatnya mendengarkan tanpa menghakimi.
-
-Mereka mengerti bahwa persahabatan tidak selalu berarti harus bersama setiap saat.
-
-Kadang, persahabatan berarti tetap menyediakan tempat untuk pulang meskipun hidup membawa masing-masing ke jalan yang berbeda.`,
-      },
-      {
-        title: "Bab 3 — Kotak Kenangan",
-        content: `Pada hari libur, mereka akhirnya kembali ke taman lama.
-
-Kotak kenangan itu masih ada, meskipun warnanya sudah memudar.
-
-Mereka membuka kertas-kertas yang pernah ditulis saat masih sekolah. Ada impian menjadi dokter, membuka toko bunga, dan mengunjungi banyak negara.
-
-Tidak semua impian sudah tercapai. Namun, mereka tidak lagi merasa harus membandingkan perjalanan masing-masing.
-
-Mereka tertawa, bercerita tentang kesalahan masa lalu, dan berjanji untuk tetap saling menghubungi.
-
-Ternyata, persahabatan bukan tentang mempertahankan semuanya tetap sama.
-
-Persahabatan adalah tentang tumbuh bersama tanpa harus menjadi orang yang sama.`,
-      },
-    ],
+    title: "Atomic Habits",
+    author: "James Clear",
+    category: "Pengembangan Diri",
+    publisher: "Gramedia",
+    year: 2019,
+    stock: 6,
   },
   {
     id: 6,
-    title: "Bisikan dari Kamar Tiga",
-    author: "PustakaKita",
-    genre: "Horor",
-    emoji: "🕯️",
-    cover: "from-slate-300 to-purple-200",
-    synopsis:
-      "Penghuni kos baru mendengar suara misterius dari kamar yang selalu terkunci.",
-    chapters: [
-      {
-        title: "Bab 1 — Kos Baru",
-        content: `Malam pertama di kos barunya, Sasa mendengar suara seseorang memanggil namanya dari ujung lorong.
-
-Ia membuka pintu kamar dan melihat lorong yang kosong. Lampu berkedip sekali sebelum kembali menyala.
-
-Keesokan paginya, ia bertanya kepada pemilik kos tentang kamar nomor tiga.
-
-Wajah ibu kos berubah. "Kalau malam, jangan pernah membuka kamar itu," katanya pelan.
-
-Sasa tertawa gugup, mengira ibu kos hanya bercanda.
-
-Sampai malam berikutnya, ketika tiga ketukan terdengar dari balik pintu kamarnya sendiri.`,
-      },
-      {
-        title: "Bab 2 — Ketukan Tengah Malam",
-        content: `Sasa menarik selimut hingga menutupi bahunya.
-
-Tok. Tok. Tok.
-
-Ia memeriksa lubang pintu. Tidak ada siapa-siapa.
-
-Namun, di lantai depan pintu terdapat secarik kertas bertuliskan: "Jangan percaya pada suara yang kamu kenal."
-
-Sasa mengenali tulisan itu. Tulisan tersebut sama persis dengan tulisan tangan di buku catatan yang ia temukan di meja kamarnya saat pertama pindah.
-
-Ia mulai bertanya-tanya, siapa sebenarnya penghuni kamar ini sebelum dirinya?`,
-      },
-      {
-        title: "Bab 3 — Pintu yang Terbuka",
-        content: `Malam berikutnya, rasa penasaran mengalahkan ketakutan Sasa.
-
-Ia berjalan menuju kamar nomor tiga sambil membawa senter. Gagang pintu yang selama ini terkunci kini dapat diputar dengan mudah.
-
-Di dalam kamar, semua perabot tertutup kain putih. Sebuah meja kecil berdiri di dekat jendela, dan di atasnya terdapat foto lama para penghuni kos.
-
-Sasa menemukan foto seorang perempuan yang wajahnya sangat mirip dengannya.
-
-Di belakang foto itu tertulis nama yang sama dengan nama ibunya.
-
-Sasa mundur selangkah.
-
-Tiba-tiba, pintu kamar tertutup sendiri.`,
-      },
-    ],
+    title: "Negeri 5 Menara",
+    author: "Ahmad Fuadi",
+    category: "Novel",
+    publisher: "Gramedia",
+    year: 2009,
+    stock: 7,
   },
   {
     id: 7,
-    title: "Kerajaan di Balik Awan",
-    author: "PustakaKita",
-    genre: "Fantasi",
-    emoji: "🦋",
-    cover: "from-sky-200 to-indigo-100",
-    synopsis:
-      "Seorang gadis menemukan jalan menuju kerajaan tersembunyi di atas awan.",
-    chapters: [
-      {
-        title: "Bab 1 — Pintu Langit",
-        content: `Mila menemukan sebuah kunci berwarna biru di dalam kotak peninggalan kakeknya.
-
-Pada malam bulan purnama, kunci itu bersinar dan menunjukkan jalan menuju bukit tertinggi.
-
-Di puncak bukit, awan terbelah. Sebuah tangga cahaya muncul di hadapannya.
-
-Mila ragu, tetapi suara lembut dari balik awan berkata, "Kami sudah menunggumu."
-
-Ia melangkah naik dan mendapati sebuah kerajaan dengan sungai berkilauan serta kupu-kupu sebesar telapak tangan.`,
-      },
-      {
-        title: "Bab 2 — Putri yang Hilang",
-        content: `Di kerajaan itu, Mila bertemu seorang penjaga bernama Elian.
-
-Ia menjelaskan bahwa kerajaan kehilangan putrinya bertahun-tahun lalu.
-
-Kunci biru yang dibawa Mila ternyata milik sang putri. Namun, Mila tidak tahu bagaimana benda itu bisa sampai kepada kakeknya.
-
-Untuk menemukan jawabannya, mereka harus memasuki perpustakaan terlarang yang menyimpan sejarah kerajaan.
-
-Di sana, Mila menemukan potret seorang perempuan yang wajahnya sangat mirip dengan ibunya.`,
-      },
-      {
-        title: "Bab 3 — Perpustakaan Terlarang",
-        content: `Perpustakaan itu dipenuhi buku-buku yang melayang di udara.
-
-Elian mengingatkan Mila agar tidak menyentuh buku bersampul hitam. Namun, buku itu justru membuka dirinya ketika Mila mendekat.
-
-Di halaman pertama, terdapat gambar kunci biru dan nama keluarga Mila.
-
-Ia mulai memahami bahwa kedatangannya ke kerajaan itu bukan kebetulan.
-
-Seseorang dari keluarganya pernah tinggal di sana, dan rahasia tersebut telah diwariskan dari satu generasi ke generasi berikutnya.`,
-      },
-    ],
+    title: "Bicara Itu Ada Seninya",
+    author: "Oh Su Hyang",
+    category: "Pendidikan",
+    publisher: "Bhuana Ilmu Populer",
+    year: 2018,
+    stock: 2,
   },
   {
     id: 8,
-    title: "Langkah Menuju Mimpi",
-    author: "PustakaKita",
-    genre: "Motivasi",
-    emoji: "🌻",
-    cover: "from-yellow-200 to-orange-100",
-    synopsis:
-      "Perjalanan seorang gadis mengejar cita-cita meskipun banyak rintangan.",
-    chapters: [
-      {
-        title: "Bab 1 — Mimpi Sederhana",
-        content: `Sejak kecil, Ayu ingin menjadi seorang penulis. Ia menuliskan cerita di buku bekas dan menyembunyikannya di bawah bantal.
-
-Ketika pertama kali menunjukkan tulisannya kepada orang lain, seseorang menertawakannya.
-
-Ayu hampir berhenti.
-
-Namun, ibunya berkata, "Kamu tidak perlu membuat semua orang percaya. Kamu hanya perlu memberi dirimu kesempatan untuk mencoba."
-
-Kalimat itu membuat Ayu kembali membuka bukunya malam itu.`,
-      },
-      {
-        title: "Bab 2 — Mencoba Lagi",
-        content: `Ayu mengirimkan ceritanya ke sebuah lomba menulis. Ia tidak menang, tetapi juri memberikan beberapa saran yang berguna.
-
-Ia memperbaiki tulisannya, belajar dari kesalahan, dan mencoba lagi.
-
-Beberapa bulan kemudian, ceritanya terpilih untuk diterbitkan dalam kumpulan karya pelajar.
-
-Ayu tersenyum ketika melihat namanya tercetak.
-
-Ia tahu perjalanannya masih panjang, tetapi kini ia tidak lagi takut memulai dari awal.`,
-      },
-      {
-        title: "Bab 3 — Hari yang Baru",
-        content: `Ayu mulai mengirimkan lebih banyak cerita dan mengikuti kelompok menulis.
-
-Ia bertemu teman-teman yang juga memiliki impian. Mereka saling membaca karya, memberikan masukan, dan merayakan kemajuan kecil.
-
-Suatu malam, Ayu membaca kembali tulisan pertamanya yang penuh kesalahan.
-
-Ia tersenyum, bukan karena tulisan itu sempurna, melainkan karena tulisan itu menjadi bukti bahwa dirinya telah memulai.
-
-Ayu akhirnya mengerti bahwa mimpi bukan hanya tentang mencapai tujuan.
-
-Mimpi juga tentang keberanian untuk terus belajar sepanjang perjalanan.`,
-      },
-    ],
-  },
-  {
-    id: 9,
-    title: "Misteri Surat Merah",
-    author: "PustakaKita",
-    genre: "Misteri",
-    emoji: "✉️",
-    cover: "from-red-200 to-rose-100",
-    synopsis:
-      "Surat tanpa nama membawa seorang mahasiswa pada teka-teki masa lalu keluarganya.",
-    chapters: [
-      {
-        title: "Bab 1 — Surat Tanpa Nama",
-        content: `Di antara tumpukan buku bekas, Bima menemukan amplop merah tanpa nama pengirim.
-
-Di dalamnya hanya ada satu kalimat: "Cari pohon mangga sebelum semuanya terlambat."
-
-Bima mengenali tempat yang dimaksud. Pohon mangga itu tumbuh di halaman rumah neneknya, tempat ia menghabiskan masa kecil.
-
-Di bawah pohon itu, ia menemukan kotak besi kecil yang terkubur dangkal.`,
-      },
-      {
-        title: "Bab 2 — Petunjuk Pertama",
-        content: `Kotak besi itu berisi foto lama, sebuah kunci, dan peta yang sebagian tintanya sudah memudar.
-
-Di belakang foto tertulis tanggal dan nama seseorang yang belum pernah Bima dengar.
-
-Ketika ia menunjukkan foto tersebut kepada ayahnya, ayahnya terdiam lama.
-
-"Kamu menemukan ini dari mana?" tanyanya.
-
-Untuk pertama kalinya, Bima menyadari bahwa teka-teki itu mungkin berkaitan dengan rahasia yang selama ini disimpan keluarganya.`,
-      },
-      {
-        title: "Bab 3 — Nama di Balik Foto",
-        content: `Bima mengikuti petunjuk pada peta menuju sebuah rumah tua di pinggir kota.
-
-Di sana, ia bertemu seorang perempuan yang mengaku sebagai teman lama neneknya.
-
-Perempuan itu menjelaskan bahwa foto tersebut diambil pada hari sebuah keluarga harus berpisah karena kesalahpahaman.
-
-Kunci di dalam kotak ternyata membuka laci meja yang telah lama disimpan di rumah nenek Bima.
-
-Di dalam laci itu terdapat surat kedua, yang akhirnya menjelaskan mengapa amplop merah tersebut dikirimkan kepadanya.`,
-      },
-    ],
-  },
-  {
-    id: 10,
-    title: "Musim Hujan di Kota Kita",
-    author: "PustakaKita",
-    genre: "Romantis",
-    emoji: "☔",
-    cover: "from-blue-200 to-violet-100",
-    synopsis:
-      "Dua orang asing berbagi payung dan perlahan menjadi bagian penting dalam hidup masing-masing.",
-    chapters: [
-      {
-        title: "Bab 1 — Satu Payung",
-        content: `Hujan turun tepat ketika Lani keluar dari toko buku. Ia tidak membawa payung dan harus menunggu di bawah kanopi kecil.
-
-Seorang pemuda mengulurkan payung biru kepadanya.
-
-"Kita searah. Mau berjalan bersama?"
-
-Lani mengangguk. Mereka berjalan melewati toko-toko yang mulai tutup, berbicara tentang buku, musik, dan makanan kesukaan.
-
-Ketika sampai di persimpangan, Lani baru menyadari bahwa ia bahkan belum menanyakan nama pemuda itu.`,
-      },
-      {
-        title: "Bab 2 — Pertemuan Kedua",
-        content: `Seminggu kemudian, Lani kembali ke toko buku yang sama.
-
-Ia tidak berharap bertemu pemuda berpayung biru itu lagi. Namun, di bagian novel, seseorang sedang membaca buku yang pernah mereka bicarakan.
-
-"Kamu akhirnya datang juga," katanya sambil tersenyum.
-
-Lani tertawa. Ia tidak tahu apakah pertemuan itu kebetulan atau awal dari sesuatu yang baru, tetapi ia senang karena hujan hari itu telah mempertemukan mereka.`,
-      },
-      {
-        title: "Bab 3 — Sebuah Undangan",
-        content: `Pemuda itu bernama Dimas. Mereka mulai bertemu setiap akhir pekan untuk berburu buku bekas dan mencoba kedai baru.
-
-Lani menyadari bahwa Dimas selalu mengingat hal-hal kecil yang ia ceritakan.
-
-Suatu hari, Dimas mengajaknya menghadiri pameran buku.
-
-"Aku ingin menunjukkan sesuatu," katanya.
-
-Di sebuah sudut pameran, Dimas menunjukkan buku catatan yang ia isi dengan ulasan buku-buku favorit mereka.
-
-Lani tersenyum. Ternyata, pertemuan di tengah hujan telah menjadi awal dari cerita yang jauh lebih panjang.`,
-      },
-    ],
-  },
-  {
-    id: 11,
-    title: "Rahasia Taman Bunga",
-    author: "PustakaKita",
-    genre: "Fantasi",
-    emoji: "🌷",
-    cover: "from-pink-200 to-green-100",
-    synopsis:
-      "Taman bunga yang hanya mekar pada tengah malam menyimpan rahasia tentang waktu.",
-    chapters: [
-      {
-        title: "Bab 1 — Bunga Tengah Malam",
-        content: `Setiap malam, Nisa melihat cahaya lembut dari taman kosong di belakang rumahnya.
-
-Suatu malam, ia memberanikan diri masuk.
-
-Di sana, bunga-bunga bermekaran meskipun matahari sudah lama terbenam. Setiap kelopak memancarkan warna yang belum pernah ia lihat.
-
-Seorang perempuan tua muncul dari balik pohon.
-
-"Taman ini menyimpan kenangan orang-orang," katanya. "Tetapi kamu harus berhati-hati. Tidak semua kenangan ingin ditemukan kembali."`,
-      },
-      {
-        title: "Bab 2 — Kenangan yang Tertinggal",
-        content: `Nisa menyentuh sebuah bunga putih. Seketika, ia melihat bayangan seorang anak kecil berlari bersama ibunya di taman itu.
-
-Ia menyadari bahwa bayangan tersebut adalah kenangan masa kecilnya sendiri, kenangan yang hampir terlupakan setelah keluarganya pindah.
-
-Nisa mengerti bahwa taman itu tidak memberinya masa lalu untuk diubah. Taman itu hanya mengingatkannya pada hal-hal berharga yang masih bisa ia bawa ke masa depan.`,
-      },
-      {
-        title: "Bab 3 — Bunga Terakhir",
-        content: `Perempuan tua itu menunjukkan satu bunga terakhir yang belum mekar.
-
-"Bunga ini akan mekar ketika kamu telah menerima kenanganmu sepenuhnya," katanya.
-
-Nisa memejamkan mata dan mengingat hari-hari bahagia bersama ibunya.
-
-Ketika membuka mata, kelopak bunga perlahan terbuka. Cahaya lembut memenuhi taman.
-
-Nisa tersenyum. Ia tidak bisa kembali ke masa lalu, tetapi ia bisa membawa kenangan baik itu dalam langkah-langkahnya ke depan.`,
-      },
-    ],
-  },
-  {
-    id: 12,
-    title: "Sahabat dari Dunia Lain",
-    author: "PustakaKita",
-    genre: "Fantasi",
-    emoji: "🌙",
-    cover: "from-indigo-200 to-purple-100",
-    synopsis:
-      "Seorang anak berteman dengan makhluk misterius yang muncul setiap bulan purnama.",
-    chapters: [
-      {
-        title: "Bab 1 — Cahaya di Jendela",
-        content: `Setiap bulan purnama, Rafi melihat cahaya kecil melayang di luar jendela kamarnya.
-
-Suatu malam, cahaya itu berubah menjadi makhluk mungil dengan sayap transparan.
-
-"Aku Lumo," katanya. "Aku tersesat dan perlu menemukan jalan pulang."
-
-Rafi terkejut, tetapi rasa penasarannya mengalahkan rasa takut. Ia berjanji membantu Lumo sebelum bulan purnama berakhir.`,
-      },
-      {
-        title: "Bab 2 — Peta Bintang",
-        content: `Lumo menunjukkan sebuah peta yang hanya terlihat ketika diterangi cahaya bulan.
-
-Mereka mengikuti petunjuk dari satu bintang ke bintang lainnya, melewati bukit dan danau kecil.
-
-Dalam perjalanan, Rafi menyadari bahwa membantu orang lain terkadang berarti melakukan sesuatu yang belum pernah ia bayangkan.
-
-Ketika akhirnya mereka menemukan jalan pulang Lumo, Rafi merasa sedih karena harus berpisah.`,
-      },
-      {
-        title: "Bab 3 — Janji di Bawah Bulan",
-        content: `Malam terakhir tiba. Lumo berdiri di tepi danau yang memantulkan cahaya bintang.
-
-"Terima kasih sudah membantuku," katanya.
-
-Rafi tersenyum, meskipun hatinya terasa berat. "Apakah kita akan bertemu lagi?"
-
-Lumo memberikan sebuah batu kecil yang bersinar.
-
-"Selama kamu masih percaya pada keajaiban, persahabatan kita tidak akan hilang."
-
-Cahaya menyelimuti Lumo, lalu perlahan menghilang ke langit.
-
-Rafi kembali ke rumah dengan batu itu di tangannya. Ia tahu petualangannya telah berakhir, tetapi ia tidak akan pernah melupakan sahabat kecil dari dunia lain.`,
-      },
-    ],
+    title: "Pulang",
+    author: "Tere Liye",
+    category: "Novel",
+    publisher: "Republika",
+    year: 2015,
+    stock: 0,
   },
 ];
 
-const genres = [
-  "Semua",
-  "Romantis",
-  "Persahabatan",
-  "Horor",
-  "Misteri",
+const initialMembers: Member[] = [
+  { id: 1, name: "Alya Putri", email: "alya@email.com", phone: "081234567801" },
+  {
+    id: 2,
+    name: "Rizky Ramadhan",
+    email: "rizky@email.com",
+    phone: "081234567802",
+  },
+  {
+    id: 3,
+    name: "Nadia Safira",
+    email: "nadia@email.com",
+    phone: "081234567803",
+  },
+  {
+    id: 4,
+    name: "Dina Maharani",
+    email: "dina@email.com",
+    phone: "081234567804",
+  },
+];
+
+const initialLoans: Loan[] = [
+  {
+    id: 1,
+    member: "Alya Putri",
+    book: "Laskar Pelangi",
+    date: "2026-10-20",
+    dueDate: "2026-10-27",
+    status: "Dipinjam",
+  },
+  {
+    id: 2,
+    member: "Rizky Ramadhan",
+    book: "Bumi",
+    date: "2026-10-19",
+    dueDate: "2026-10-26",
+    status: "Dipinjam",
+  },
+  {
+    id: 3,
+    member: "Nadia Safira",
+    book: "Filosofi Teras",
+    date: "2026-10-15",
+    dueDate: "2026-10-22",
+    status: "Dikembalikan",
+  },
+  {
+    id: 4,
+    member: "Dina Maharani",
+    book: "Negeri 5 Menara",
+    date: "2026-10-14",
+    dueDate: "2026-10-21",
+    status: "Dikembalikan",
+  },
+];
+
+const menuItems: { label: Section; icon: string }[] = [
+  { label: "Dashboard", icon: "⌂" },
+  { label: "Katalog Buku", icon: "▤" },
+  { label: "Data Anggota", icon: "♧" },
+  { label: "Peminjaman", icon: "↗" },
+  { label: "Pengembalian", icon: "↙" },
+  { label: "Riwayat", icon: "◷" },
+];
+
+const categories = [
+  "Semua Kategori",
+  "Novel",
   "Fantasi",
-  "Motivasi",
+  "Pengembangan Diri",
+  "Pendidikan",
+];
+
+const covers = [
+  "from-pink-200 to-rose-100",
+  "from-violet-200 to-purple-100",
+  "from-blue-200 to-cyan-100",
+  "from-orange-200 to-amber-100",
+  "from-emerald-200 to-teal-100",
+  "from-fuchsia-200 to-pink-100",
+  "from-sky-200 to-indigo-100",
+  "from-rose-200 to-orange-100",
 ];
 
 export default function Home() {
+  const [section, setSection] = useState<Section>("Dashboard");
+  const [role, setRole] = useState<"Admin" | "Anggota">("Admin");
+  const [books, setBooks] = useState(initialBooks);
+  const [members, setMembers] = useState(initialMembers);
+  const [loans, setLoans] = useState(initialLoans);
   const [search, setSearch] = useState("");
-  const [genre, setGenre] = useState("Semua");
-  const [bookId, setBookId] = useState<number | null>(null);
-  const [chapterIndex, setChapterIndex] = useState(0);
+  const [category, setCategory] = useState("Semua Kategori");
+  const [showBookForm, setShowBookForm] = useState(false);
+  const [showMemberForm, setShowMemberForm] = useState(false);
+  const [showLoanForm, setShowLoanForm] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [notice, setNotice] = useState("");
+  const [bookForm, setBookForm] = useState({
+    title: "",
+    author: "",
+    category: "Novel",
+    publisher: "",
+    year: 2026,
 
-  const activeBook = novels.find((book) => book.id === bookId);
-
-  const filteredBooks = novels.filter((book) => {
-    const query = search.toLowerCase();
-    const matchesSearch =
-      book.title.toLowerCase().includes(query) ||
-      book.genre.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query);
-
-    return matchesSearch && (genre === "Semua" || book.genre === genre);
+    stock: 1,
+  });
+  const [memberForm, setMemberForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
+  const [loanForm, setLoanForm] = useState({
+    member: initialMembers[0]?.name ?? "",
+    book: initialBooks[0]?.title ?? "",
+    date: "2026-10-25",
+    dueDate: "2026-11-01",
   });
 
-  function openBook(id: number) {
-    setBookId(id);
-    setChapterIndex(0);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const filteredBooks = useMemo(() => {
+    return books.filter((book) => {
+      const term = search.toLowerCase();
+      const matchesSearch =
+        book.title.toLowerCase().includes(term) ||
+        book.author.toLowerCase().includes(term) ||
+        book.category.toLowerCase().includes(term);
+      const matchesCategory =
+        category === "Semua Kategori" || book.category === category;
+      return matchesSearch && matchesCategory;
+    });
+  }, [books, search, category]);
+
+  const activeLoans = loans.filter((loan) => loan.status === "Dipinjam");
+  const returnedLoans = loans.filter((loan) => loan.status === "Dikembalikan");
+
+  function notify(message: string) {
+    setNotice(message);
+    window.setTimeout(() => setNotice(""), 3000);
   }
 
-  function goHome() {
-    setBookId(null);
-    setChapterIndex(0);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  function saveBook(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const newBook: Book = {
+      ...bookForm,
+      id: Math.max(0, ...books.map((book) => book.id)) + 1,
+    };
+    setBooks((current) => [...current, newBook]);
+    setBookForm({
+      title: "",
+      author: "",
+      category: "Novel",
+      publisher: "",
+      year: 2026,
+      stock: 1,
+    });
+    setShowBookForm(false);
+    notify("Buku berhasil ditambahkan ke daftar sementara.");
+  }
+
+  function saveMember(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const newMember: Member = {
+      ...memberForm,
+      id: Math.max(0, ...members.map((member) => member.id)) + 1,
+    };
+    setMembers((current) => [...current, newMember]);
+    setMemberForm({ name: "", email: "", phone: "" });
+    setShowMemberForm(false);
+    notify("Anggota berhasil ditambahkan ke daftar sementara.");
+  }
+
+  function saveLoan(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const book = books.find((item) => item.title === loanForm.book);
+    if (!book || book.stock < 1) {
+      notify("Maaf, stok buku tidak tersedia.");
+      return;
+    }
+    const newLoan: Loan = {
+      ...loanForm,
+      id: Math.max(0, ...loans.map((loan) => loan.id)) + 1,
+      status: "Dipinjam",
+    };
+    setLoans((current) => [...current, newLoan]);
+    setBooks((current) =>
+      current.map((item) =>
+        item.id === book.id ? { ...item, stock: item.stock - 1 } : item,
+      ),
+    );
+    setShowLoanForm(false);
+    notify("Peminjaman berhasil dicatat sementara.");
+  }
+
+  function returnLoan(loan: Loan) {
+    if (loan.status === "Dikembalikan") return;
+    setLoans((current) =>
+      current.map((item) =>
+        item.id === loan.id ? { ...item, status: "Dikembalikan" } : item,
+      ),
+    );
+    setBooks((current) =>
+      current.map((book) =>
+        book.title === loan.book ? { ...book, stock: book.stock + 1 } : book,
+      ),
+    );
+    notify("Pengembalian berhasil dicatat sementara.");
+  }
+
+  function deleteBook(id: number) {
+    setBooks((current) => current.filter((book) => book.id !== id));
+    setSelectedBook(null);
+    notify("Buku dihapus dari daftar sementara.");
+  }
+
+  function deleteMember(id: number) {
+    setMembers((current) => current.filter((member) => member.id !== id));
+    notify("Anggota dihapus dari daftar sementara.");
+  }
+
+  const pageTitle =
+    role === "Anggota" && section === "Dashboard"
+      ? "Dashboard Anggota"
+      : section;
+
+  return (
+    <main className="min-h-screen bg-[#faf8ff] text-slate-700">
+      <div className="flex min-h-screen">
+        <aside className="hidden w-[250px] shrink-0 flex-col border-r border-violet-100 bg-white px-5 py-7 lg:flex">
+          <button
+            onClick={() => setSection("Dashboard")}
+            className="mb-10 flex items-center gap-3 text-left"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-300 to-pink-300 text-2xl shadow-md shadow-violet-100">
+              📚
+            </div>
+            <div>
+              <h1 className="text-lg font-extrabold tracking-tight text-violet-950">
+                RuangBaca
+              </h1>
+              <p className="text-[10px] font-medium tracking-[0.2em] text-violet-400">
+                DIGITAL LIBRARY
+              </p>
+            </div>
+          </button>
+
+          <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+            Menu utama
+          </p>
+          <nav className="flex flex-col gap-1.5">
+            {menuItems
+              .filter(
+                (item) =>
+                  role === "Admin" ||
+                  !["Data Anggota", "Pengembalian"].includes(item.label),
+              )
+              .map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => {
+                    setSection(item.label);
+                    setSearch("");
+                  }}
+                  className={`flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold transition ${
+                    section === item.label
+                      ? "bg-violet-100 text-violet-800 shadow-sm"
+                      : "text-slate-500 hover:bg-violet-50 hover:text-violet-700"
+                  }`}
+                >
+                  <span className="w-6 text-center text-lg">{item.icon}</span>
+                  {item.label}
+                  {item.label === "Peminjaman" && activeLoans.length > 0 && (
+                    <span className="ml-auto rounded-full bg-pink-100 px-2 py-0.5 text-[10px] text-pink-700">
+                      {activeLoans.length}
+                    </span>
+                  )}
+                </button>
+              ))}
+          </nav>
+
+          <p className="mb-3 mt-8 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+            Akun
+          </p>
+          <button
+            onClick={() => setSection("Profil Saya")}
+            className={`flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold ${
+              section === "Profil Saya"
+                ? "bg-violet-100 text-violet-800"
+                : "text-slate-500 hover:bg-violet-50"
+            }`}
+          >
+            <span className="w-6 text-center text-lg">♡</span>
+            Profil Saya
+          </button>
+
+          <div className="mt-auto rounded-2xl bg-gradient-to-br from-violet-100 via-pink-50 to-blue-100 p-4">
+            <div className="mb-2 text-2xl">🌷</div>
+            <p className="text-sm font-bold text-violet-900">
+              Sudah membaca hari ini?
+            </p>
+            <p className="mt-1 text-xs leading-5 text-violet-600">
+              Satu halaman kecil bisa membuka dunia yang besar.
+            </p>
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white">
+              <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-violet-400 to-pink-300" />
+            </div>
+          </div>
+
+          <p className="mt-5 text-center text-[10px] text-slate-400">
+            RuangBaca © 2026 · Prototipe
+          </p>
+        </aside>
+
+        <section className="min-w-0 flex-1">
+          <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-violet-100 bg-white/90 px-4 py-4 backdrop-blur-md sm:px-8 lg:px-10">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-xl lg:hidden">
+                📚
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-400">
+                  Selamat datang di RuangBaca ✨
+                </p>
+                <h2 className="text-xl font-extrabold text-slate-800 sm:text-2xl">
+                  {pageTitle}
+                </h2>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 sm:gap-4">
+              <label className="hidden items-center gap-2 rounded-xl border border-violet-100 bg-violet-50/60 px-3 py-2 sm:flex">
+                <span className="text-slate-400">⌕</span>
+                <input
+                  value={search}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    if (section !== "Katalog Buku") {
+                      setSection("Katalog Buku");
+                    }
+                  }}
+                  placeholder="Cari buku..."
+                  className="w-28 bg-transparent text-xs outline-none placeholder:text-slate-400 md:w-40"
+                />
+              </label>
+              <div className="flex items-center gap-2 rounded-xl bg-pink-50 px-2 py-2 sm:px-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-violet-200 text-sm">
+                  {role === "Admin" ? "👩🏻‍💼" : "👩🏻"}
+                </span>
+                <div className="hidden sm:block">
+                  <p className="text-xs font-bold text-slate-700">
+                    {role === "Admin" ? "Petugas Perpus" : "Anggota"}
+                  </p>
+                  <p className="text-[10px] text-slate-400">{role}</p>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <div className="flex gap-2 overflow-x-auto border-b border-violet-100 bg-white px-4 py-2 lg:hidden">
+            {menuItems
+              .filter(
+                (item) =>
+                  role === "Admin" ||
+                  !["Data Anggota", "Pengembalian"].includes(item.label),
+              )
+              .map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => setSection(item.label)}
+                  className={`shrink-0 rounded-full px-3 py-2 text-xs font-semibold ${
+                    section === item.label
+                      ? "bg-violet-600 text-white"
+                      : "bg-violet-50 text-violet-700"
+                  }`}
+                >
+                  {item.icon} {item.label}
+                </button>
+              ))}
+          </div>
+
+          <div className="mx-auto max-w-[1500px] p-4 sm:p-8 lg:p-10">
+            <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm text-slate-500">
+                  {section === "Dashboard"
+                    ? "Berikut ringkasan aktivitas perpustakaanmu."
+                    : `Kelola ${section.toLowerCase()} dengan mudah dan rapi.`}
+                </p>
+              </div>
+              <label className="flex items-center gap-2 rounded-xl border border-violet-100 bg-white px-3 py-2 text-xs shadow-sm">
+                <span className="text-violet-400">♧</span>
+                <span className="font-medium text-slate-500">
+                  Mode tampilan
+                </span>
+                <select
+                  value={role}
+                  onChange={(event) => {
+                    const nextRole = event.target.value as "Admin" | "Anggota";
+                    setRole(nextRole);
+                    setSection("Dashboard");
+                    setSearch("");
+                  }}
+                  className="max-w-24 bg-transparent font-bold text-violet-700 outline-none"
+                >
+                  <option value="Admin">Admin</option>
+                  <option value="Anggota">Anggota</option>
+                </select>
+              </label>
+            </div>
+
+            {section === "Dashboard" && (
+              <>
+                <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  {[
+                    {
+                      label: "Total Judul Buku",
+                      value: books.length,
+                      icon: "📚",
+                      color: "bg-violet-100",
+                      note: "Koleksi perpustakaan",
+                    },
+                    {
+                      label: "Total Anggota",
+                      value: members.length,
+                      icon: "👥",
+                      color: "bg-pink-100",
+                      note: "Anggota terdaftar",
+                    },
+                    {
+                      label: "Sedang Dipinjam",
+                      value: activeLoans.length,
+                      icon: "📖",
+                      color: "bg-blue-100",
+                      note: "Transaksi aktif",
+                    },
+                    {
+                      label: "Sudah Kembali",
+                      value: returnedLoans.length,
+                      icon: "🌸",
+                      color: "bg-emerald-100",
+                      note: "Transaksi selesai",
+                    },
+                  ].map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm shadow-violet-100/40 transition hover:-translate-y-1 hover:shadow-md"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-xs font-medium text-slate-500">
+                            {stat.label}
+                          </p>
+                          <p className="mt-3 text-3xl font-extrabold text-slate-800">
+                            {stat.value}
+                          </p>
+                        </div>
+                        <span
+                          className={`flex h-12 w-12 items-center justify-center rounded-2xl text-xl ${stat.color}`}
+                        >
+                          {stat.icon}
+                        </span>
+                      </div>
+                      <p className="mt-4 text-[11px] text-slate-400">
+                        {stat.note}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mb-8 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+                  <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-violet-500 via-purple-400 to-pink-300 p-6 text-white shadow-lg shadow-violet-200 sm:p-8">
+                    <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
+                      <div className="max-w-lg">
+                        <span className="rounded-full bg-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest">
+                          Perpustakaan digital
+                        </span>
+                        <h3 className="mt-4 text-2xl font-extrabold leading-tight sm:text-3xl">
+                          Temukan cerita,
+                          <br />
+                          temukan duniamu. 💜
+                        </h3>
+                        <p className="mt-3 max-w-sm text-sm leading-6 text-white/85">
+                          Jelajahi koleksi buku, temukan pengetahuan baru, dan
+                          kelola aktivitas perpustakaan dalam satu tempat.
+                        </p>
+                        <button
+                          onClick={() => setSection("Katalog Buku")}
+                          className="mt-5 rounded-xl bg-white px-5 py-3 text-xs font-bold text-violet-700 shadow-sm transition hover:bg-violet-50"
+                        >
+                          Jelajahi Katalog →
+                        </button>
+                      </div>
+                      <div className="self-center text-7xl drop-shadow-lg sm:text-8xl">
+                        📚
+                      </div>
+                    </div>
+                    <div className="mt-7 flex flex-wrap gap-2">
+                      {["Mudah dicari", "Data teratur", "Nyaman dibaca"].map(
+                        (tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-[10px] font-medium"
+                          >
+                            ✦ {tag}
+                          </span>
+                        ),
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-3xl border border-violet-100 bg-white p-6 shadow-sm">
+                    <div className="mb-5 flex items-center justify-between">
+                      <div>
+                        <h3 className="font-extrabold text-slate-800">
+                          Status Koleksi
+                        </h3>
+                        <p className="mt-1 text-xs text-slate-400">
+                          Ringkasan stok buku
+                        </p>
+                      </div>
+                      <span className="rounded-xl bg-violet-100 p-2 text-xl">
+                        📊
+                      </span>
+                    </div>
+                    {[
+                      {
+                        label: "Buku tersedia",
+                        value: books.filter((book) => book.stock > 0).length,
+                        color: "bg-emerald-400",
+                      },
+                      {
+                        label: "Stok habis",
+                        value: books.filter((book) => book.stock === 0).length,
+                        color: "bg-pink-400",
+                      },
+                      {
+                        label: "Total eksemplar",
+                        value: books.reduce((sum, book) => sum + book.stock, 0),
+                        color: "bg-violet-400",
+                      },
+                    ].map((item) => (
+                      <div key={item.label} className="mb-5 last:mb-0">
+                        <div className="mb-2 flex justify-between text-xs">
+                          <span className="text-slate-500">{item.label}</span>
+                          <span className="font-bold text-slate-800">
+                            {item.value}
+                          </span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className={`h-full rounded-full ${item.color}`}
+                            style={{
+                              width: `${Math.min(
+                                100,
+                                (item.value /
+                                  Math.max(
+                                    1,
+                                    books.reduce(
+                                      (sum, book) => sum + book.stock,
+                                      0,
+                                    ),
+                                  )) *
+                                  100,
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-violet-100 bg-white p-5 shadow-sm sm:p-6">
+                  <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="font-extrabold text-slate-800">
+                        Buku Pilihan ✨
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Beberapa buku dari koleksi perpustakaan
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setSection("Katalog Buku")}
+                      className="text-xs font-bold text-violet-600 hover:text-pink-500"
+                    >
+                      Lihat semua →
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+                    {books.slice(0, 4).map((book, index) => (
+                      <button
+                        key={book.id}
+                        onClick={() => setSelectedBook(book)}
+                        className="group text-left"
+                      >
+                        <div
+                          className={`flex aspect-[4/3] items-center justify-center rounded-2xl bg-gradient-to-br ${covers[index % covers.length]} transition group-hover:scale-[1.02]`}
+                        >
+                          <span className="text-5xl drop-shadow-sm">📕</span>
+                        </div>
+                        <p className="mt-3 line-clamp-1 text-sm font-bold text-slate-700 group-hover:text-violet-700">
+                          {book.title}
+                        </p>
+                        <p className="mt-1 text-[11px] text-slate-400">
+                          {book.author}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {section === "Katalog Buku" && (
+              <>
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <label className="flex flex-1 items-center gap-2 rounded-xl border border-violet-100 bg-white px-4 py-3 shadow-sm">
+                    <span className="text-lg text-violet-400">⌕</span>
+                    <input
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                      placeholder="Cari judul, penulis, atau kategori..."
+                      className="w-full bg-transparent text-sm outline-none"
+                    />
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(event) => setCategory(event.target.value)}
+                    className="rounded-xl border border-violet-100 bg-white px-4 py-3 text-sm outline-none focus:border-violet-300"
+                  >
+                    {categories.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
+                  </select>
+                  {role === "Admin" && (
+                    <button
+                      onClick={() => setShowBookForm(true)}
+                      className="rounded-xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-violet-200 transition hover:bg-violet-700"
+                    >
+                      + Tambah Buku
+                    </button>
+                  )}
+                </div>
+
+                <div className="mb-5 flex items-center justify-between">
+                  <p className="text-sm text-slate-500">
+                    Ditemukan{" "}
+                    <strong className="text-violet-700">
+                      {filteredBooks.length}
+                    </strong>{" "}
+                    buku
+                  </p>
+                  <span className="rounded-full bg-pink-100 px-3 py-1 text-[10px] font-bold text-pink-700">
+                    Koleksi Perpustakaan
+                  </span>
+                </div>
+
+                {filteredBooks.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-violet-200 bg-white p-12 text-center">
+                    <div className="text-4xl">🔎</div>
+                    <p className="mt-3 font-bold">Buku tidak ditemukan</p>
+                    <p className="mt-1 text-sm text-slate-400">
+                      Coba kata kunci atau kategori yang berbeda.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                    {filteredBooks.map((book, index) => (
+                      <article
+                        key={book.id}
+                        className="overflow-hidden rounded-2xl border border-violet-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-100/70"
+                      >
+                        <div
+                          className={`relative flex h-44 items-center justify-center bg-gradient-to-br ${covers[index % covers.length]}`}
+                        >
+                          <span className="text-7xl drop-shadow-sm">📚</span>
+                          <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold text-violet-700">
+                            {book.category}
+                          </span>
+                          <span
+                            className={`absolute right-3 top-3 rounded-full px-3 py-1 text-[10px] font-bold ${
+                              book.stock > 0
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-rose-100 text-rose-700"
+                            }`}
+                          >
+                            {book.stock > 0 ? "Tersedia" : "Stok habis"}
+                          </span>
+                        </div>
+                        <div className="p-5">
+                          <h3 className="line-clamp-1 font-extrabold text-slate-800">
+                            {book.title}
+                          </h3>
+                          <p className="mt-1 text-xs text-slate-400">
+                            oleh {book.author}
+                          </p>
+                          <div className="my-4 flex items-center justify-between border-t border-violet-50 pt-3 text-xs">
+                            <span className="text-slate-400">
+                              Tahun {book.year}
+                            </span>
+                            <span className="font-semibold text-violet-700">
+                              Stok: {book.stock}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => setSelectedBook(book)}
+                            className="w-full rounded-xl bg-violet-50 py-2.5 text-xs font-bold text-violet-700 transition hover:bg-violet-600 hover:text-white"
+                          >
+                            Lihat Detail Buku
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {section === "Data Anggota" && (
+              <div className="overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-violet-100 p-5 sm:p-6">
+                  <div>
+                    <h3 className="font-extrabold text-slate-800">
+                      Data Anggota
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Total {members.length} anggota dalam daftar sementara
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowMemberForm(true)}
+                    className="rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-violet-700"
+                  >
+                    + Tambah Anggota
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[650px] text-left text-sm">
+                    <thead className="bg-violet-50/70 text-[11px] uppercase tracking-wider text-slate-500">
+                      <tr>
+                        <th className="px-6 py-4">Anggota</th>
+                        <th className="px-6 py-4">Email</th>
+                        <th className="px-6 py-4">Nomor HP</th>
+                        <th className="px-6 py-4">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {members.map((member) => (
+                        <tr
+                          key={member.id}
+                          className="border-t border-violet-50 hover:bg-violet-50/30"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-100 text-lg">
+                                👤
+                              </span>
+                              <span className="font-bold text-slate-700">
+                                {member.name}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-slate-500">
+                            {member.email}
+                          </td>
+                          <td className="px-6 py-4 text-slate-500">
+                            {member.phone}
+                          </td>
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() => deleteMember(member.id)}
+                              className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-100"
+                            >
+                              Hapus
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {section === "Peminjaman" && (
+              <div className="overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-violet-100 p-5 sm:p-6">
+                  <div>
+                    <h3 className="font-extrabold text-slate-800">
+                      Transaksi Peminjaman
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Catat dan pantau peminjaman buku
+                    </p>
+                  </div>
+                  {role === "Admin" && (
+                    <button
+                      onClick={() => setShowLoanForm(true)}
+                      className="rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-violet-700"
+                    >
+                      + Catat Peminjaman
+                    </button>
+                  )}
+                </div>
+                <LoanTable loans={activeLoans} />
+              </div>
+            )}
+
+            {section === "Pengembalian" && (
+              <div className="overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-sm">
+                <div className="border-b border-violet-100 p-5 sm:p-6">
+                  <h3 className="font-extrabold text-slate-800">
+                    Pengembalian Buku
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Proses pengembalian dan perbarui status transaksi
+                  </p>
+                </div>
+                {activeLoans.length === 0 ? (
+                  <EmptyState text="Tidak ada peminjaman yang menunggu pengembalian." />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[700px] text-left text-sm">
+                      <thead className="bg-violet-50/70 text-[11px] uppercase text-slate-500">
+                        <tr>
+                          <th className="px-6 py-4">Anggota</th>
+                          <th className="px-6 py-4">Buku</th>
+                          <th className="px-6 py-4">Tanggal Pinjam</th>
+                          <th className="px-6 py-4">Batas Kembali</th>
+                          <th className="px-6 py-4">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeLoans.map((loan) => (
+                          <tr
+                            key={loan.id}
+                            className="border-t border-violet-50"
+                          >
+                            <td className="px-6 py-4 font-semibold">
+                              {loan.member}
+                            </td>
+                            <td className="px-6 py-4">{loan.book}</td>
+                            <td className="px-6 py-4 text-slate-500">
+                              {loan.date}
+                            </td>
+                            <td className="px-6 py-4 text-slate-500">
+                              {loan.dueDate}
+                            </td>
+                            <td className="px-6 py-4">
+                              <button
+                                onClick={() => returnLoan(loan)}
+                                className="rounded-lg bg-emerald-100 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-200"
+                              >
+                                Proses Kembali
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {section === "Riwayat" && (
+              <div className="overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-sm">
+                <div className="border-b border-violet-100 p-5 sm:p-6">
+                  <h3 className="font-extrabold text-slate-800">
+                    Riwayat Transaksi
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Catatan peminjaman dan pengembalian
+                  </p>
+                </div>
+                <LoanTable
+                  loans={
+                    role === "Admin"
+                      ? loans
+                      : loans.filter(
+                          (loan) => loan.member === initialMembers[0]?.name,
+                        )
+                  }
+                />
+              </div>
+            )}
+
+            {section === "Profil Saya" && (
+              <div className="mx-auto max-w-2xl rounded-3xl border border-violet-100 bg-white p-6 shadow-sm sm:p-10">
+                <div className="text-center">
+                  <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-violet-200 text-4xl">
+                    {role === "Admin" ? "👩🏻‍💼" : "👩🏻"}
+                  </div>
+                  <h3 className="mt-4 text-xl font-extrabold text-slate-800">
+                    {role === "Admin" ? "Petugas Perpustakaan" : "Alya Putri"}
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {role} · RuangBaca Digital
+                  </p>
+                </div>
+                <div className="mt-8 space-y-4">
+                  <div className="rounded-xl bg-violet-50 p-4">
+                    <p className="text-xs text-slate-400">Role pengguna</p>
+                    <p className="mt-1 text-sm font-bold text-violet-800">
+                      {role}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-pink-50 p-4">
+                    <p className="text-xs text-slate-400">Email contoh</p>
+                    <p className="mt-1 text-sm font-bold text-pink-800">
+                      {role === "Admin"
+                        ? "admin@ruangbaca.test"
+                        : "alya@email.com"}
+                    </p>
+                  </div>
+                  <p className="text-center text-xs leading-5 text-slate-400">
+                    Ini adalah profil contoh. Autentikasi dan data akun asli
+                    perlu dihubungkan ke backend.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <footer className="mt-10 flex flex-col items-center justify-between gap-2 border-t border-violet-100 py-5 text-center text-[10px] text-slate-400 sm:flex-row sm:text-left">
+              <p>© 2026 RuangBaca Digital Library</p>
+              <p>Dibuat dengan ♡ untuk pengalaman membaca yang lebih nyaman</p>
+            </footer>
+          </div>
+        </section>
+      </div>
+
+      {notice && (
+        <div
+          role="status"
+          className="fixed bottom-5 right-5 z-50 max-w-sm rounded-2xl bg-violet-900 px-5 py-4 text-sm font-semibold text-white shadow-xl"
+        >
+          ✨ {notice}
+        </div>
+      )}
+
+      {showBookForm && (
+        <Modal title="Tambah Buku Baru" onClose={() => setShowBookForm(false)}>
+          <form onSubmit={saveBook} className="space-y-4">
+            <Field label="Judul Buku">
+              <input
+                required
+                value={bookForm.title}
+                onChange={(event) =>
+                  setBookForm({ ...bookForm, title: event.target.value })
+                }
+                className={inputStyle}
+                placeholder="Masukkan judul buku"
+              />
+            </Field>
+            <Field label="Penulis">
+              <input
+                required
+                value={bookForm.author}
+                onChange={(event) =>
+                  setBookForm({ ...bookForm, author: event.target.value })
+                }
+                className={inputStyle}
+                placeholder="Nama penulis"
+              />
+            </Field>
+            <Field label="Kategori">
+              <select
+                value={bookForm.category}
+                onChange={(event) =>
+                  setBookForm({ ...bookForm, category: event.target.value })
+                }
+                className={inputStyle}
+              >
+                {categories
+                  .filter((item) => item !== "Semua Kategori")
+                  .map((item) => (
+                    <option key={item}>{item}</option>
+                  ))}
+              </select>
+            </Field>
+            <Field label="Penerbit">
+              <input
+                required
+                value={bookForm.publisher}
+                onChange={(event) =>
+                  setBookForm({ ...bookForm, publisher: event.target.value })
+                }
+                className={inputStyle}
+                placeholder="Nama penerbit"
+              />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Tahun Terbit">
+                <input
+                  required
+                  type="number"
+                  min="1000"
+                  max="2100"
+                  value={bookForm.year}
+                  onChange={(event) =>
+                    setBookForm({
+                      ...bookForm,
+                      year: Number(event.target.value),
+                    })
+                  }
+                  className={inputStyle}
+                />
+              </Field>
+              <Field label="Jumlah Stok">
+                <input
+                  required
+                  type="number"
+                  min="0"
+                  value={bookForm.stock}
+                  onChange={(event) =>
+                    setBookForm({
+                      ...bookForm,
+                      stock: Number(event.target.value),
+                    })
+                  }
+                  className={inputStyle}
+                />
+              </Field>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowBookForm(false)}
+                className="flex-1 rounded-xl border border-violet-100 py-3 text-sm font-bold text-slate-500"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="flex-1 rounded-xl bg-violet-600 py-3 text-sm font-bold text-white hover:bg-violet-700"
+              >
+                Simpan Buku
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {showMemberForm && (
+        <Modal title="Tambah Anggota" onClose={() => setShowMemberForm(false)}>
+          <form onSubmit={saveMember} className="space-y-4">
+            <Field label="Nama Anggota">
+              <input
+                required
+                value={memberForm.name}
+                onChange={(event) =>
+                  setMemberForm({ ...memberForm, name: event.target.value })
+                }
+                className={inputStyle}
+                placeholder="Nama lengkap"
+              />
+            </Field>
+            <Field label="Email">
+              <input
+                required
+                type="email"
+                value={memberForm.email}
+                onChange={(event) =>
+                  setMemberForm({ ...memberForm, email: event.target.value })
+                }
+                className={inputStyle}
+                placeholder="nama@email.com"
+              />
+            </Field>
+            <Field label="Nomor HP">
+              <input
+                required
+                value={memberForm.phone}
+                onChange={(event) =>
+                  setMemberForm({ ...memberForm, phone: event.target.value })
+                }
+                className={inputStyle}
+                placeholder="08xxxxxxxxxx"
+              />
+            </Field>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowMemberForm(false)}
+                className="flex-1 rounded-xl border border-violet-100 py-3 text-sm font-bold text-slate-500"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="flex-1 rounded-xl bg-violet-600 py-3 text-sm font-bold text-white hover:bg-violet-700"
+              >
+                Simpan Anggota
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {showLoanForm && (
+        <Modal title="Catat Peminjaman" onClose={() => setShowLoanForm(false)}>
+          <form onSubmit={saveLoan} className="space-y-4">
+            <Field label="Pilih Anggota">
+              <select
+                required
+                value={loanForm.member}
+                onChange={(event) =>
+                  setLoanForm({ ...loanForm, member: event.target.value })
+                }
+                className={inputStyle}
+              >
+                {members.map((member) => (
+                  <option key={member.id} value={member.name}>
+                    {member.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Pilih Buku">
+              <select
+                required
+                value={loanForm.book}
+                onChange={(event) =>
+                  setLoanForm({ ...loanForm, book: event.target.value })
+                }
+                className={inputStyle}
+              >
+                {books
+                  .filter((book) => book.stock > 0)
+                  .map((book) => (
+                    <option key={book.id} value={book.title}>
+                      {book.title} (stok {book.stock})
+                    </option>
+                  ))}
+              </select>
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Tanggal Pinjam">
+                <input
+                  required
+                  type="date"
+                  value={loanForm.date}
+                  onChange={(event) =>
+                    setLoanForm({ ...loanForm, date: event.target.value })
+                  }
+                  className={inputStyle}
+                />
+              </Field>
+              <Field label="Batas Pengembalian">
+                <input
+                  required
+                  type="date"
+                  value={loanForm.dueDate}
+                  onChange={(event) =>
+                    setLoanForm({ ...loanForm, dueDate: event.target.value })
+                  }
+                  className={inputStyle}
+                />
+              </Field>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLoanForm(false)}
+                className="flex-1 rounded-xl border border-violet-100 py-3 text-sm font-bold text-slate-500"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={
+                  members.length === 0 || books.every((book) => book.stock < 1)
+                }
+                className="flex-1 rounded-xl bg-violet-600 py-3 text-sm font-bold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Simpan Transaksi
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {selectedBook && (
+        <Modal title="Detail Buku" onClose={() => setSelectedBook(null)}>
+          <div className="text-center">
+            <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-3xl bg-gradient-to-br from-violet-200 to-pink-200 text-6xl">
+              📚
+            </div>
+            <h3 className="mt-4 text-xl font-extrabold text-slate-800">
+              {selectedBook.title}
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">{selectedBook.author}</p>
+          </div>
+          <div className="mt-6 space-y-3">
+            {[
+              ["Penerbit", selectedBook.publisher],
+              ["Tahun Terbit", String(selectedBook.year)],
+              ["Kategori", selectedBook.category],
+              ["Stok", String(selectedBook.stock)],
+              ["Status", selectedBook.stock > 0 ? "Tersedia" : "Stok habis"],
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                className="flex justify-between gap-4 rounded-xl bg-violet-50/70 px-4 py-3 text-sm"
+              >
+                <span className="text-slate-500">{label}</span>
+                <span className="text-right font-bold text-slate-700">
+                  {value}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 flex gap-3">
+            <button
+              onClick={() => setSelectedBook(null)}
+              className="flex-1 rounded-xl border border-violet-100 py-3 text-sm font-bold text-slate-500"
+            >
+              Tutup
+            </button>
+            {role === "Admin" && (
+              <button
+                onClick={() => deleteBook(selectedBook.id)}
+                className="flex-1 rounded-xl bg-rose-50 py-3 text-sm font-bold text-rose-600 hover:bg-rose-100"
+              >
+                Hapus Buku
+              </button>
+            )}
+          </div>
+        </Modal>
+      )}
+    </main>
+  );
+}
+
+const inputStyle =
+  "w-full rounded-xl border border-violet-100 bg-white px-3 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100";
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-xs font-bold text-slate-600">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function Modal({
+  title,
+  children,
+  onClose,
+}: {
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/40 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="my-auto max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl sm:p-8"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <h2 className="text-xl font-extrabold text-slate-800">{title}</h2>
+          <button
+            onClick={onClose}
+            aria-label="Tutup"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-lg text-violet-700 hover:bg-violet-100"
+          >
+            ×
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function LoanTable({ loans }: { loans: Loan[] }) {
+  if (loans.length === 0) {
+    return <EmptyState text="Belum ada transaksi pada bagian ini." />;
   }
 
   return (
-    <main className="min-h-screen bg-[#fff9fc] text-slate-700">
-      <nav className="sticky top-0 z-30 border-b border-pink-100 bg-white/90 px-5 py-4 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <button
-            onClick={goHome}
-            className="text-2xl font-black text-pink-500"
-          >
-            🌷 PustakaKita
-          </button>
-          <button
-            onClick={goHome}
-            className="rounded-full bg-pink-100 px-4 py-2 text-sm font-bold text-pink-600"
-          >
-            🏠 Beranda
-          </button>
-        </div>
-      </nav>
-
-      {activeBook ? (
-        <section className="mx-auto max-w-5xl px-5 py-10">
-          <button
-            onClick={goHome}
-            className="mb-6 rounded-full bg-pink-100 px-5 py-3 font-bold text-pink-600"
-          >
-            ← Kembali ke koleksi
-          </button>
-
-          <div className="grid gap-8 md:grid-cols-[240px_1fr]">
-            <aside>
-              <div
-                className={`flex aspect-[3/4] items-center justify-center rounded-3xl bg-gradient-to-br ${activeBook.cover} text-8xl shadow-lg`}
-              >
-                {activeBook.emoji}
-              </div>
-              <h1 className="mt-5 text-3xl font-black">{activeBook.title}</h1>
-              <p className="mt-2 text-slate-500">✍️ {activeBook.author}</p>
-              <span className="mt-3 inline-block rounded-full bg-purple-100 px-4 py-2 text-sm font-bold text-purple-600">
-                {activeBook.genre}
-              </span>
-              <p className="mt-5 leading-7">{activeBook.synopsis}</p>
-              <p className="mt-4 text-sm text-slate-500">
-                📚 {activeBook.chapters.length} bab · Baca langsung di sini
-              </p>
-            </aside>
-
-            <section className="rounded-3xl border border-pink-100 bg-white p-6 shadow-sm sm:p-9">
-              <p className="font-bold text-pink-500">RUANG BACA PRIBADI</p>
-              <h2 className="mt-2 text-2xl font-black">Daftar Isi 📖</h2>
-
-              <div className="mt-5 space-y-2">
-                {activeBook.chapters.map((item, index) => (
-                  <button
-                    key={item.title}
-                    onClick={() => setChapterIndex(index)}
-                    className={`w-full rounded-2xl border p-4 text-left ${
-                      chapterIndex === index
-                        ? "border-pink-300 bg-pink-50"
-                        : "border-slate-100 hover:bg-pink-50"
-                    }`}
-                  >
-                    <span className="mr-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-sm font-black text-purple-600">
-                      {index + 1}
-                    </span>
-                    <span className="font-semibold">{item.title}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="my-8 border-t border-pink-100" />
-
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-                <span className="rounded-full bg-pink-100 px-3 py-1 text-sm font-bold text-pink-600">
-                  Bab {chapterIndex + 1}
-                </span>
-                <span className="text-sm text-slate-400">
-                  {chapterIndex + 1} dari {activeBook.chapters.length}
-                </span>
-              </div>
-
-              <h2 className="mb-7 text-2xl font-black leading-snug sm:text-3xl">
-                {activeBook.chapters[chapterIndex].title}
-              </h2>
-
-              <article className="whitespace-pre-line text-base leading-8 text-slate-700 sm:text-lg sm:leading-9">
-                {activeBook.chapters[chapterIndex].content}
-              </article>
-
-              <div className="mt-10 flex flex-wrap justify-between gap-3 border-t border-pink-100 pt-6">
-                <button
-                  onClick={() => setChapterIndex((old) => Math.max(0, old - 1))}
-                  disabled={chapterIndex === 0}
-                  className="rounded-full bg-sky-100 px-5 py-3 font-bold text-sky-700 disabled:opacity-40"
-                >
-                  ← Sebelumnya
-                </button>
-                <button
-                  onClick={() =>
-                    setChapterIndex((old) =>
-                      Math.min(activeBook.chapters.length - 1, old + 1),
-                    )
-                  }
-                  disabled={chapterIndex === activeBook.chapters.length - 1}
-                  className="rounded-full bg-pink-500 px-5 py-3 font-bold text-white disabled:opacity-40"
-                >
-                  Berikutnya →
-                </button>
-              </div>
-
-              {chapterIndex === activeBook.chapters.length - 1 && (
-                <div className="mt-6 rounded-2xl bg-purple-50 p-5 text-center">
-                  <p className="text-2xl">🌸📚💗</p>
-                  <h3 className="mt-2 font-black">Kamu sampai di akhir!</h3>
-                  <button
-                    onClick={goHome}
-                    className="mt-4 rounded-full bg-purple-500 px-5 py-3 font-bold text-white"
-                  >
-                    Pilih Novel Lain
-                  </button>
-                </div>
-              )}
-            </section>
-          </div>
-        </section>
-      ) : (
-        <>
-          <section className="bg-gradient-to-br from-pink-100 via-purple-100 to-sky-100 px-5 py-16 sm:py-24">
-            <div className="mx-auto max-w-6xl">
-              <p className="font-bold text-pink-500">
-                ✨ SELAMAT DATANG DI PUSTAKAKITA
-              </p>
-              <h1 className="mt-4 max-w-3xl text-4xl font-black leading-tight sm:text-6xl">
-                Cari cerita favoritmu, lalu tenggelam dalam dunia novel 💗
-              </h1>
-              <p className="mt-5 max-w-2xl leading-8 text-slate-600">
-                Temukan cerita romantis, persahabatan, horor, misteri, fantasi,
-                dan motivasi. Pilih buku, buka babnya, lalu baca langsung di
-                sini.
-              </p>
-              <a
-                href="#koleksi"
-                className="mt-8 inline-block rounded-full bg-pink-500 px-7 py-4 font-bold text-white shadow-lg hover:bg-pink-600"
-              >
-                Mulai Membaca ↓
-              </a>
-              <div className="mt-8 flex flex-wrap gap-3 text-sm font-bold">
-                <span className="rounded-full bg-white/80 px-4 py-2">
-                  🌹 Romantis
-                </span>
-                <span className="rounded-full bg-white/80 px-4 py-2">
-                  👻 Horor
-                </span>
-                <span className="rounded-full bg-white/80 px-4 py-2">
-                  🦋 Fantasi
-                </span>
-                <span className="rounded-full bg-white/80 px-4 py-2">
-                  🫶 Persahabatan
-                </span>
-              </div>
-            </div>
-          </section>
-
-          <section id="koleksi" className="mx-auto max-w-6xl px-5 py-14">
-            <p className="font-bold text-pink-500">KOLEKSI CERITA</p>
-            <h2 className="mt-2 text-3xl font-black">Rak Novel Kita 📚</h2>
-            <p className="mt-2 text-slate-500">
-              Ada {novels.length} novel untuk kamu jelajahi. Semua bisa dibaca
-              langsung di website ini.
-            </p>
-
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="🔎 Cari judul novel atau genre..."
-              className="mt-7 w-full rounded-full border border-pink-100 bg-white px-6 py-4 outline-none focus:ring-2 focus:ring-pink-300"
-            />
-
-            <div className="my-6 flex flex-wrap gap-3">
-              {genres.map((item) => (
-                <button
-                  key={item}
-                  onClick={() => setGenre(item)}
-                  className={`rounded-full px-5 py-3 font-bold ${
-                    genre === item
-                      ? "bg-pink-500 text-white"
-                      : "bg-white ring-1 ring-pink-100 hover:bg-pink-50"
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[680px] text-left text-sm">
+        <thead className="bg-violet-50/70 text-[11px] uppercase tracking-wider text-slate-500">
+          <tr>
+            <th className="px-6 py-4">Anggota</th>
+            <th className="px-6 py-4">Judul Buku</th>
+            <th className="px-6 py-4">Tanggal Pinjam</th>
+            <th className="px-6 py-4">Batas Kembali</th>
+            <th className="px-6 py-4">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {loans.map((loan) => (
+            <tr
+              key={loan.id}
+              className="border-t border-violet-50 hover:bg-violet-50/30"
+            >
+              <td className="px-6 py-4 font-semibold text-slate-700">
+                {loan.member}
+              </td>
+              <td className="px-6 py-4 text-slate-600">{loan.book}</td>
+              <td className="px-6 py-4 text-slate-500">{loan.date}</td>
+              <td className="px-6 py-4 text-slate-500">{loan.dueDate}</td>
+              <td className="px-6 py-4">
+                <span
+                  className={`rounded-full px-3 py-1.5 text-[10px] font-bold ${
+                    loan.status === "Dipinjam"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-emerald-100 text-emerald-700"
                   }`}
                 >
-                  {item}
-                </button>
-              ))}
-            </div>
+                  {loan.status}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
-            {filteredBooks.length === 0 ? (
-              <div className="rounded-3xl bg-white p-10 text-center">
-                <p className="text-4xl">🔎</p>
-                <p className="mt-3 font-bold">Novel tidak ditemukan</p>
-                <p className="mt-2 text-slate-500">
-                  Coba kata pencarian lain, ya.
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredBooks.map((book) => (
-                  <article
-                    key={book.id}
-                    className="overflow-hidden rounded-3xl border border-pink-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
-                  >
-                    <div
-                      className={`flex h-64 items-center justify-center bg-gradient-to-br ${book.cover} text-8xl`}
-                    >
-                      {book.emoji}
-                    </div>
-                    <div className="p-6">
-                      <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-600">
-                        {book.genre}
-                      </span>
-                      <h3 className="mt-4 text-2xl font-black">{book.title}</h3>
-                      <p className="mt-2 text-sm text-slate-500">
-                        ✍️ {book.author}
-                      </p>
-                      <p className="mt-4 leading-7 text-slate-600">
-                        {book.synopsis}
-                      </p>
-                      <p className="mt-4 text-sm font-semibold text-slate-400">
-                        📖 {book.chapters.length} bab
-                      </p>
-                      <button
-                        onClick={() => openBook(book.id)}
-                        className="mt-5 w-full rounded-full bg-pink-500 py-3 font-bold text-white hover:bg-pink-600"
-                      >
-                        Baca Novel Sekarang 📖
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="mx-auto max-w-6xl px-5 pb-14">
-            <div className="rounded-3xl bg-gradient-to-r from-sky-100 via-purple-100 to-pink-100 p-8 text-center sm:p-12">
-              <p className="text-4xl">🧸📚🌷</p>
-              <h2 className="mt-4 text-2xl font-black sm:text-3xl">
-                Satu hari, satu cerita baru.
-              </h2>
-              <p className="mx-auto mt-3 max-w-xl leading-7 text-slate-600">
-                Nikmati cerita dengan santai. Tidak perlu terburu-buru, karena
-                setiap halaman punya kisahnya sendiri.
-              </p>
-            </div>
-          </section>
-        </>
-      )}
-
-      <footer className="bg-pink-100 px-5 py-8 text-center">
-        <p className="text-xl font-black text-pink-600">🌷 PustakaKita</p>
-        <p className="mt-2 text-sm text-slate-500">
-          Tempat kecil untuk cerita yang besar.
-        </p>
-      </footer>
-    </main>
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="p-12 text-center">
+      <div className="text-4xl">🌷</div>
+      <p className="mt-3 text-sm font-semibold text-slate-600">{text}</p>
+    </div>
   );
 }
