@@ -1,36 +1,115 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📚 PERPUSTAKAAN DIGITAL
 
-## Getting Started
+## 1. Deskripsi Project
 
-First, run the development server:
+Perpustakaan Digital merupakan aplikasi berbasis website yang dikembangkan untuk memudahkan pengguna dalam mengakses koleksi buku dan novel secara digital.
+
+Aplikasi ini dibuat sebagai project mata kuliah Web Framework dengan tujuan menerapkan teknologi pengembangan web pada sebuah sistem perpustakaan.
+
+## 2. Tujuan Project
+
+- Mempermudah akses terhadap koleksi buku digital.
+- Menyediakan platform perpustakaan berbasis website.
+- Menerapkan pengembangan frontend dan backend.
+- Mengimplementasikan pengelolaan data menggunakan database.
+
+## 3. Teknologi yang Digunakan
+
+**Frontend:**
+
+- Next.js
+- React.js
+- TypeScript
+- Tailwind CSS
+
+**Backend:**
+
+- Python
+- SQLAlchemy
+
+**Database:**
+
+- PostgreSQL
+
+**Tools:**
+
+- Visual Studio Code
+- Git
+- GitHub
+
+## 4. Struktur Project
+
+```text
+perpustakaan-digital/
+│
+├── app/
+│   ├── page.tsx
+│   ├── layout.tsx
+│   └── globals.css
+│
+├── backend/
+│   ├── database.py
+│   ├── main.py
+│   ├── models.py
+│   └── schemas.py
+│
+├── public/
+│
+├── .gitignore
+├── package.json
+├── package-lock.json
+├── README.md
+└── tsconfig.json
+```
+
+## 5. Cara Menjalankan Project
+
+### A. Menjalankan Frontend
+
+1. Buka folder project di Visual Studio Code.
+2. Buka terminal.
+3. Jalankan perintah:
+
+```bash
+npm install
+```
+
+4. Jalankan aplikasi:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Buka browser melalui:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### B. Menjalankan Backend
 
-## Learn More
+1. Masuk ke folder backend:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+cd backend
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. Aktifkan virtual environment dan instal dependensi sesuai file requirements project.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. Jalankan backend sesuai konfigurasi aplikasi.
 
-## Deploy on Vercel
+## 6. Pengembangan Project
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Project ini dikembangkan secara bertahap dengan melakukan penyempurnaan tampilan website, pengembangan backend, dan pengelolaan database.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 7. Repository GitHub
+
+Source code project:
+
+https://github.com/nefisaefiana29-boop/perpustakaan-digital
+
+---
+
+**Project Mata Kuliah Web Framework**
+
+**Project:** Perpustakaan Digital
