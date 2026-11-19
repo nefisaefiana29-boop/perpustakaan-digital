@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+const API_URL = "http://127.0.0.1:8000";
 
 type Book = {
   id: number;
@@ -36,81 +38,6 @@ type Section =
   | "Pengembalian"
   | "Riwayat"
   | "Profil Saya";
-
-const initialBooks: Book[] = [
-  {
-    id: 1,
-    title: "Laskar Pelangi",
-    author: "Andrea Hirata",
-    category: "Novel",
-    publisher: "Bentang Pustaka",
-    year: 2005,
-    stock: 8,
-  },
-  {
-    id: 2,
-    title: "Bumi",
-    author: "Tere Liye",
-    category: "Fantasi",
-    publisher: "Gramedia",
-    year: 2014,
-    stock: 5,
-  },
-  {
-    id: 3,
-    title: "Filosofi Teras",
-    author: "Henry Manampiring",
-    category: "Pengembangan Diri",
-    publisher: "Kompas",
-    year: 2018,
-    stock: 4,
-  },
-  {
-    id: 4,
-    title: "Laut Bercerita",
-    author: "Leila S. Chudori",
-    category: "Novel",
-    publisher: "Kepustakaan Populer Gramedia",
-    year: 2017,
-    stock: 3,
-  },
-  {
-    id: 5,
-    title: "Atomic Habits",
-    author: "James Clear",
-    category: "Pengembangan Diri",
-    publisher: "Gramedia",
-    year: 2019,
-    stock: 6,
-  },
-  {
-    id: 6,
-    title: "Negeri 5 Menara",
-    author: "Ahmad Fuadi",
-    category: "Novel",
-    publisher: "Gramedia",
-    year: 2009,
-    stock: 7,
-  },
-  {
-    id: 7,
-    title: "Bicara Itu Ada Seninya",
-    author: "Oh Su Hyang",
-    category: "Pendidikan",
-    publisher: "Bhuana Ilmu Populer",
-    year: 2018,
-    stock: 2,
-  },
-  {
-    id: 8,
-    title: "Pulang",
-    author: "Tere Liye",
-    category: "Novel",
-    publisher: "Republika",
-    year: 2015,
-    stock: 0,
-  },
-];
 
 const initialMembers: Member[] = [
   { id: 1, name: "Alya Putri", email: "alya@email.com", phone: "081234567801" },
@@ -197,49 +124,102 @@ const covers = [
   "from-rose-200 to-orange-100",
 ];
 
+const inputStyle =
+  "w-full rounded-xl border border-violet-100 bg-white px-3 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100";
+
 export default function Home() {
   const [section, setSection] = useState<Section>("Dashboard");
   const [role, setRole] = useState<"Admin" | "Anggota">("Admin");
-  const [books, setBooks] = useState(initialBooks);
+
+  // Data buku diambil dari database melalui FastAPI
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loadingBooks, setLoadingBooks] = useState(true);
+
   const [members, setMembers] = useState(initialMembers);
   const [loans, setLoans] = useState(initialLoans);
+
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Semua Kategori");
+
   const [showBookForm, setShowBookForm] = useState(false);
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [showLoanForm, setShowLoanForm] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [notice, setNotice] = useState("");
+
   const [bookForm, setBookForm] = useState({
     title: "",
     author: "",
     category: "Novel",
     publisher: "",
     year: 2026,
-
     stock: 1,
   });
+
   const [memberForm, setMemberForm] = useState({
     name: "",
     email: "",
     phone: "",
   });
+
   const [loanForm, setLoanForm] = useState({
     member: initialMembers[0]?.name ?? "",
-    book: initialBooks[0]?.title ?? "",
-    date: "2026-10-25",
-    dueDate: "2026-11-01",
+    book: "",
+    date: "2026-11-07",
+    dueDate: "2026-11-14",
   });
+
+  function notify(message: string) {
+    setNotice(message);
+    window.setTimeout(() => setNotice(""), 3000);
+  }
+
+  // Mengambil buku dari database
+  useEffect(() => {
+    async function loadBooks() {
+      try {
+        const response = await fetch(`${API_URL}/buku`);
+
+        if (!response.ok) {
+          throw new Error("Gagal mengambil data buku");
+        }
+
+        const data = await response.json();
+
+        const formattedBooks: Book[] = data.map((item: any) => ({
+          id: item.id,
+          title: item.judul,
+          author: item.penulis ?? "",
+          category: item.kategori ?? "Umum",
+          publisher: item.penerbit ?? "",
+          year: item.tahun_terbit ?? 0,
+          stock: item.stok ?? 0,
+        }));
+
+        setBooks(formattedBooks);
+      } catch (error) {
+        console.error("Kesalahan mengambil buku:", error);
+        notify("Gagal menghubungkan ke server API.");
+      } finally {
+        setLoadingBooks(false);
+      }
+    }
+
+    loadBooks();
+  }, []);
 
   const filteredBooks = useMemo(() => {
     return books.filter((book) => {
       const term = search.toLowerCase();
+
       const matchesSearch =
         book.title.toLowerCase().includes(term) ||
         book.author.toLowerCase().includes(term) ||
         book.category.toLowerCase().includes(term);
+
       const matchesCategory =
         category === "Semua Kategori" || book.category === category;
+
       return matchesSearch && matchesCategory;
     });
   }, [books, search, category]);
@@ -247,83 +227,151 @@ export default function Home() {
   const activeLoans = loans.filter((loan) => loan.status === "Dipinjam");
   const returnedLoans = loans.filter((loan) => loan.status === "Dikembalikan");
 
-  function notify(message: string) {
-    setNotice(message);
-    window.setTimeout(() => setNotice(""), 3000);
-  }
-
-  function saveBook(event: React.FormEvent<HTMLFormElement>) {
+  // Menambahkan buku ke database
+  async function saveBook(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const newBook: Book = {
-      ...bookForm,
-      id: Math.max(0, ...books.map((book) => book.id)) + 1,
-    };
-    setBooks((current) => [...current, newBook]);
-    setBookForm({
-      title: "",
-      author: "",
-      category: "Novel",
-      publisher: "",
-      year: 2026,
-      stock: 1,
-    });
-    setShowBookForm(false);
-    notify("Buku berhasil ditambahkan ke daftar sementara.");
+
+    try {
+      const response = await fetch(`${API_URL}/buku`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          judul: bookForm.title,
+          penulis: bookForm.author,
+          penerbit: bookForm.publisher,
+          tahun_terbit: bookForm.year,
+          kategori: bookForm.category,
+          stok: bookForm.stock,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.detail || "Gagal menyimpan buku.");
+      }
+
+      const item = await response.json();
+
+      const newBook: Book = {
+        id: item.id,
+        title: item.judul,
+        author: item.penulis ?? "",
+        category: item.kategori ?? "Umum",
+        publisher: item.penerbit ?? "",
+        year: item.tahun_terbit ?? 0,
+        stock: item.stok ?? 0,
+      };
+
+      setBooks((current) => [...current, newBook]);
+
+      setBookForm({
+        title: "",
+        author: "",
+        category: "Novel",
+        publisher: "",
+        year: 2026,
+        stock: 1,
+      });
+
+      setShowBookForm(false);
+      notify("Buku berhasil disimpan ke database!");
+    } catch (error) {
+      console.error(error);
+      notify(
+        error instanceof Error
+          ? error.message
+          : "Tidak dapat menghubungkan ke server.",
+      );
+    }
   }
 
+  // Menghapus buku dari database
+  async function deleteBook(id: number) {
+    try {
+      const response = await fetch(`${API_URL}/buku/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.detail || "Gagal menghapus buku.");
+      }
+
+      setBooks((current) => current.filter((book) => book.id !== id));
+      setSelectedBook(null);
+      notify("Buku berhasil dihapus dari database!");
+    } catch (error) {
+      console.error(error);
+      notify(
+        error instanceof Error
+          ? error.message
+          : "Tidak dapat menghubungkan ke server.",
+      );
+    }
+  }
+
+  // Menambahkan anggota sementara
   function saveMember(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
     const newMember: Member = {
       ...memberForm,
       id: Math.max(0, ...members.map((member) => member.id)) + 1,
     };
+
     setMembers((current) => [...current, newMember]);
     setMemberForm({ name: "", email: "", phone: "" });
     setShowMemberForm(false);
-    notify("Anggota berhasil ditambahkan ke daftar sementara.");
+    notify("Anggota ditambahkan ke daftar sementara.");
   }
 
+  // Mencatat peminjaman sementara
   function saveLoan(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
     const book = books.find((item) => item.title === loanForm.book);
+
     if (!book || book.stock < 1) {
       notify("Maaf, stok buku tidak tersedia.");
       return;
     }
+
     const newLoan: Loan = {
       ...loanForm,
       id: Math.max(0, ...loans.map((loan) => loan.id)) + 1,
       status: "Dipinjam",
     };
+
     setLoans((current) => [...current, newLoan]);
+
     setBooks((current) =>
       current.map((item) =>
         item.id === book.id ? { ...item, stock: item.stock - 1 } : item,
       ),
     );
+
     setShowLoanForm(false);
-    notify("Peminjaman berhasil dicatat sementara.");
+    notify("Peminjaman dicatat sementara.");
   }
 
   function returnLoan(loan: Loan) {
     if (loan.status === "Dikembalikan") return;
+
     setLoans((current) =>
       current.map((item) =>
         item.id === loan.id ? { ...item, status: "Dikembalikan" } : item,
       ),
     );
+
     setBooks((current) =>
       current.map((book) =>
         book.title === loan.book ? { ...book, stock: book.stock + 1 } : book,
       ),
     );
-    notify("Pengembalian berhasil dicatat sementara.");
-  }
 
-  function deleteBook(id: number) {
-    setBooks((current) => current.filter((book) => book.id !== id));
-    setSelectedBook(null);
-    notify("Buku dihapus dari daftar sementara.");
+    notify("Pengembalian dicatat sementara.");
   }
 
   function deleteMember(id: number) {
@@ -360,6 +408,7 @@ export default function Home() {
           <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
             Menu utama
           </p>
+
           <nav className="flex flex-col gap-1.5">
             {menuItems
               .filter(
@@ -394,6 +443,7 @@ export default function Home() {
           <p className="mb-3 mt-8 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
             Akun
           </p>
+
           <button
             onClick={() => setSection("Profil Saya")}
             className={`flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold ${
@@ -455,6 +505,7 @@ export default function Home() {
                   className="w-28 bg-transparent text-xs outline-none placeholder:text-slate-400 md:w-40"
                 />
               </label>
+
               <div className="flex items-center gap-2 rounded-xl bg-pink-50 px-2 py-2 sm:px-3">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-violet-200 text-sm">
                   {role === "Admin" ? "👩🏻‍💼" : "👩🏻"}
@@ -493,13 +544,12 @@ export default function Home() {
 
           <div className="mx-auto max-w-[1500px] p-4 sm:p-8 lg:p-10">
             <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm text-slate-500">
-                  {section === "Dashboard"
-                    ? "Berikut ringkasan aktivitas perpustakaanmu."
-                    : `Kelola ${section.toLowerCase()} dengan mudah dan rapi.`}
-                </p>
-              </div>
+              <p className="text-sm text-slate-500">
+                {section === "Dashboard"
+                  ? "Berikut ringkasan aktivitas perpustakaanmu."
+                  : `Kelola ${section.toLowerCase()} dengan mudah dan rapi.`}
+              </p>
+
               <label className="flex items-center gap-2 rounded-xl border border-violet-100 bg-white px-3 py-2 text-xs shadow-sm">
                 <span className="text-violet-400">♧</span>
                 <span className="font-medium text-slate-500">
@@ -537,21 +587,21 @@ export default function Home() {
                       value: members.length,
                       icon: "👥",
                       color: "bg-pink-100",
-                      note: "Anggota terdaftar",
+                      note: "Anggota contoh",
                     },
                     {
                       label: "Sedang Dipinjam",
                       value: activeLoans.length,
                       icon: "📖",
                       color: "bg-blue-100",
-                      note: "Transaksi aktif",
+                      note: "Transaksi contoh",
                     },
                     {
                       label: "Sudah Kembali",
                       value: returnedLoans.length,
                       icon: "🌸",
                       color: "bg-emerald-100",
-                      note: "Transaksi selesai",
+                      note: "Transaksi contoh",
                     },
                   ].map((stat) => (
                     <div
@@ -582,31 +632,24 @@ export default function Home() {
 
                 <div className="mb-8 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
                   <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-violet-500 via-purple-400 to-pink-300 p-6 text-white shadow-lg shadow-violet-200 sm:p-8">
-                    <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
-                      <div className="max-w-lg">
-                        <span className="rounded-full bg-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest">
-                          Perpustakaan digital
-                        </span>
-                        <h3 className="mt-4 text-2xl font-extrabold leading-tight sm:text-3xl">
-                          Temukan cerita,
-                          <br />
-                          temukan duniamu. 💜
-                        </h3>
-                        <p className="mt-3 max-w-sm text-sm leading-6 text-white/85">
-                          Jelajahi koleksi buku, temukan pengetahuan baru, dan
-                          kelola aktivitas perpustakaan dalam satu tempat.
-                        </p>
-                        <button
-                          onClick={() => setSection("Katalog Buku")}
-                          className="mt-5 rounded-xl bg-white px-5 py-3 text-xs font-bold text-violet-700 shadow-sm transition hover:bg-violet-50"
-                        >
-                          Jelajahi Katalog →
-                        </button>
-                      </div>
-                      <div className="self-center text-7xl drop-shadow-lg sm:text-8xl">
-                        📚
-                      </div>
-                    </div>
+                    <span className="rounded-full bg-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest">
+                      Perpustakaan digital
+                    </span>
+                    <h3 className="mt-4 text-2xl font-extrabold leading-tight sm:text-3xl">
+                      Temukan cerita,
+                      <br />
+                      temukan duniamu. 💜
+                    </h3>
+                    <p className="mt-3 max-w-sm text-sm leading-6 text-white/85">
+                      Jelajahi koleksi buku, temukan pengetahuan baru, dan
+                      kelola aktivitas perpustakaan dalam satu tempat.
+                    </p>
+                    <button
+                      onClick={() => setSection("Katalog Buku")}
+                      className="mt-5 rounded-xl bg-white px-5 py-3 text-xs font-bold text-violet-700 shadow-sm transition hover:bg-violet-50"
+                    >
+                      Jelajahi Katalog →
+                    </button>
                     <div className="mt-7 flex flex-wrap gap-2">
                       {["Mudah dicari", "Data teratur", "Nyaman dibaca"].map(
                         (tag) => (
@@ -639,17 +682,14 @@ export default function Home() {
                       {
                         label: "Buku tersedia",
                         value: books.filter((book) => book.stock > 0).length,
-                        color: "bg-emerald-400",
                       },
                       {
                         label: "Stok habis",
                         value: books.filter((book) => book.stock === 0).length,
-                        color: "bg-pink-400",
                       },
                       {
                         label: "Total eksemplar",
                         value: books.reduce((sum, book) => sum + book.stock, 0),
-                        color: "bg-violet-400",
                       },
                     ].map((item) => (
                       <div key={item.label} className="mb-5 last:mb-0">
@@ -661,7 +701,7 @@ export default function Home() {
                         </div>
                         <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                           <div
-                            className={`h-full rounded-full ${item.color}`}
+                            className="h-full rounded-full bg-violet-400"
                             style={{
                               width: `${Math.min(
                                 100,
@@ -700,27 +740,36 @@ export default function Home() {
                       Lihat semua →
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-                    {books.slice(0, 4).map((book, index) => (
-                      <button
-                        key={book.id}
-                        onClick={() => setSelectedBook(book)}
-                        className="group text-left"
-                      >
-                        <div
-                          className={`flex aspect-[4/3] items-center justify-center rounded-2xl bg-gradient-to-br ${covers[index % covers.length]} transition group-hover:scale-[1.02]`}
+
+                  {loadingBooks ? (
+                    <p className="text-sm text-violet-600">
+                      Memuat buku dari database...
+                    </p>
+                  ) : books.length === 0 ? (
+                    <EmptyState text="Belum ada buku dalam database." />
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+                      {books.slice(0, 4).map((book, index) => (
+                        <button
+                          key={book.id}
+                          onClick={() => setSelectedBook(book)}
+                          className="group text-left"
                         >
-                          <span className="text-5xl drop-shadow-sm">📕</span>
-                        </div>
-                        <p className="mt-3 line-clamp-1 text-sm font-bold text-slate-700 group-hover:text-violet-700">
-                          {book.title}
-                        </p>
-                        <p className="mt-1 text-[11px] text-slate-400">
-                          {book.author}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
+                          <div
+                            className={`flex aspect-[4/3] items-center justify-center rounded-2xl bg-gradient-to-br ${covers[index % covers.length]} transition group-hover:scale-[1.02]`}
+                          >
+                            <span className="text-5xl drop-shadow-sm">📕</span>
+                          </div>
+                          <p className="mt-3 line-clamp-1 text-sm font-bold text-slate-700 group-hover:text-violet-700">
+                            {book.title}
+                          </p>
+                          <p className="mt-1 text-[11px] text-slate-400">
+                            {book.author}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -737,6 +786,7 @@ export default function Home() {
                       className="w-full bg-transparent text-sm outline-none"
                     />
                   </label>
+
                   <select
                     value={category}
                     onChange={(event) => setCategory(event.target.value)}
@@ -746,6 +796,7 @@ export default function Home() {
                       <option key={item}>{item}</option>
                     ))}
                   </select>
+
                   {role === "Admin" && (
                     <button
                       onClick={() => setShowBookForm(true)}
@@ -755,6 +806,12 @@ export default function Home() {
                     </button>
                   )}
                 </div>
+
+                {loadingBooks && (
+                  <p className="mb-4 text-sm text-violet-600">
+                    Sedang mengambil data buku dari database...
+                  </p>
+                )}
 
                 <div className="mb-5 flex items-center justify-between">
                   <p className="text-sm text-slate-500">
@@ -769,14 +826,8 @@ export default function Home() {
                   </span>
                 </div>
 
-                {filteredBooks.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-violet-200 bg-white p-12 text-center">
-                    <div className="text-4xl">🔎</div>
-                    <p className="mt-3 font-bold">Buku tidak ditemukan</p>
-                    <p className="mt-1 text-sm text-slate-400">
-                      Coba kata kunci atau kategori yang berbeda.
-                    </p>
-                  </div>
+                {!loadingBooks && filteredBooks.length === 0 ? (
+                  <EmptyState text="Buku tidak ditemukan. Coba kata kunci atau kategori lain." />
                 ) : (
                   <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                     {filteredBooks.map((book, index) => (
@@ -801,6 +852,7 @@ export default function Home() {
                             {book.stock > 0 ? "Tersedia" : "Stok habis"}
                           </span>
                         </div>
+
                         <div className="p-5">
                           <h3 className="line-clamp-1 font-extrabold text-slate-800">
                             {book.title}
@@ -808,6 +860,7 @@ export default function Home() {
                           <p className="mt-1 text-xs text-slate-400">
                             oleh {book.author}
                           </p>
+
                           <div className="my-4 flex items-center justify-between border-t border-violet-50 pt-3 text-xs">
                             <span className="text-slate-400">
                               Tahun {book.year}
@@ -816,6 +869,7 @@ export default function Home() {
                               Stok: {book.stock}
                             </span>
                           </div>
+
                           <button
                             onClick={() => setSelectedBook(book)}
                             className="w-full rounded-xl bg-violet-50 py-2.5 text-xs font-bold text-violet-700 transition hover:bg-violet-600 hover:text-white"
@@ -838,7 +892,7 @@ export default function Home() {
                       Data Anggota
                     </h3>
                     <p className="mt-1 text-xs text-slate-400">
-                      Total {members.length} anggota dalam daftar sementara
+                      Total {members.length} anggota dalam daftar contoh
                     </p>
                   </div>
                   <button
@@ -848,6 +902,7 @@ export default function Home() {
                     + Tambah Anggota
                   </button>
                 </div>
+
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[650px] text-left text-sm">
                     <thead className="bg-violet-50/70 text-[11px] uppercase tracking-wider text-slate-500">
@@ -904,7 +959,7 @@ export default function Home() {
                       Transaksi Peminjaman
                     </h3>
                     <p className="mt-1 text-xs text-slate-400">
-                      Catat dan pantau peminjaman buku
+                      Catat dan pantau peminjaman contoh
                     </p>
                   </div>
                   {role === "Admin" && (
@@ -927,9 +982,10 @@ export default function Home() {
                     Pengembalian Buku
                   </h3>
                   <p className="mt-1 text-xs text-slate-400">
-                    Proses pengembalian dan perbarui status transaksi
+                    Proses pengembalian transaksi contoh
                   </p>
                 </div>
+
                 {activeLoans.length === 0 ? (
                   <EmptyState text="Tidak ada peminjaman yang menunggu pengembalian." />
                 ) : (
@@ -984,7 +1040,7 @@ export default function Home() {
                     Riwayat Transaksi
                   </h3>
                   <p className="mt-1 text-xs text-slate-400">
-                    Catatan peminjaman dan pengembalian
+                    Catatan peminjaman dan pengembalian contoh
                   </p>
                 </div>
                 <LoanTable
@@ -1012,6 +1068,7 @@ export default function Home() {
                     {role} · RuangBaca Digital
                   </p>
                 </div>
+
                 <div className="mt-8 space-y-4">
                   <div className="rounded-xl bg-violet-50 p-4">
                     <p className="text-xs text-slate-400">Role pengguna</p>
@@ -1066,6 +1123,7 @@ export default function Home() {
                 placeholder="Masukkan judul buku"
               />
             </Field>
+
             <Field label="Penulis">
               <input
                 required
@@ -1077,6 +1135,7 @@ export default function Home() {
                 placeholder="Nama penulis"
               />
             </Field>
+
             <Field label="Kategori">
               <select
                 value={bookForm.category}
@@ -1092,6 +1151,7 @@ export default function Home() {
                   ))}
               </select>
             </Field>
+
             <Field label="Penerbit">
               <input
                 required
@@ -1103,6 +1163,7 @@ export default function Home() {
                 placeholder="Nama penerbit"
               />
             </Field>
+
             <div className="grid grid-cols-2 gap-3">
               <Field label="Tahun Terbit">
                 <input
@@ -1120,6 +1181,7 @@ export default function Home() {
                   className={inputStyle}
                 />
               </Field>
+
               <Field label="Jumlah Stok">
                 <input
                   required
@@ -1136,6 +1198,7 @@ export default function Home() {
                 />
               </Field>
             </div>
+
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
@@ -1169,6 +1232,7 @@ export default function Home() {
                 placeholder="Nama lengkap"
               />
             </Field>
+
             <Field label="Email">
               <input
                 required
@@ -1181,6 +1245,7 @@ export default function Home() {
                 placeholder="nama@email.com"
               />
             </Field>
+
             <Field label="Nomor HP">
               <input
                 required
@@ -1192,6 +1257,7 @@ export default function Home() {
                 placeholder="08xxxxxxxxxx"
               />
             </Field>
+
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
@@ -1230,6 +1296,7 @@ export default function Home() {
                 ))}
               </select>
             </Field>
+
             <Field label="Pilih Buku">
               <select
                 required
@@ -1239,6 +1306,7 @@ export default function Home() {
                 }
                 className={inputStyle}
               >
+                <option value="">Pilih buku</option>
                 {books
                   .filter((book) => book.stock > 0)
                   .map((book) => (
@@ -1248,6 +1316,7 @@ export default function Home() {
                   ))}
               </select>
             </Field>
+
             <div className="grid grid-cols-2 gap-3">
               <Field label="Tanggal Pinjam">
                 <input
@@ -1260,6 +1329,7 @@ export default function Home() {
                   className={inputStyle}
                 />
               </Field>
+
               <Field label="Batas Pengembalian">
                 <input
                   required
@@ -1272,6 +1342,7 @@ export default function Home() {
                 />
               </Field>
             </div>
+
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
@@ -1305,6 +1376,7 @@ export default function Home() {
             </h3>
             <p className="mt-1 text-sm text-slate-500">{selectedBook.author}</p>
           </div>
+
           <div className="mt-6 space-y-3">
             {[
               ["Penerbit", selectedBook.publisher],
@@ -1324,6 +1396,7 @@ export default function Home() {
               </div>
             ))}
           </div>
+
           <div className="mt-5 flex gap-3">
             <button
               onClick={() => setSelectedBook(null)}
@@ -1331,6 +1404,7 @@ export default function Home() {
             >
               Tutup
             </button>
+
             {role === "Admin" && (
               <button
                 onClick={() => deleteBook(selectedBook.id)}
@@ -1345,9 +1419,6 @@ export default function Home() {
     </main>
   );
 }
-
-const inputStyle =
-  "w-full rounded-xl border border-violet-100 bg-white px-3 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100";
 
 function Field({
   label,
